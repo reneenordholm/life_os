@@ -8,7 +8,22 @@ class AssistantService
   def call
     embedding = EmbeddingService.embed(@question)
 
-    chunks = DocumentChunk
+    scope = DocumentChunk.joins(:document)
+
+    # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
+    lowered = @question.downcase
+
+    if lowered.include?("recipe")
+      scope = scope.where(documents: { doc_type: "recipe" })
+    elsif lowered.include?("grocery")
+      scope = scope.where(documents: { doc_type: "grocery" })
+    elsif lowered.include?("medical") || lowered.include?("doctor")
+      scope = scope.where(documents: { doc_type: "medical" })
+    elsif lowered.include?("trip") || lowered.include?("vacation")
+      scope = scope.where(documents: { doc_type: "itinerary" })
+    end
+
+    chunks = scope
       .nearest_neighbors(
         :embedding,
         embedding,
