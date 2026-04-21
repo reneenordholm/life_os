@@ -40,6 +40,15 @@ class AssistantService
   private
 
   def ask_llm(context)
+    today = Date.today
+    yesterday = today - 1
+    day_name = today.strftime("%A")
+
+    weekday_map = (0..6).map do |i|
+      d = today - i
+      "#{d.strftime('%A')} was #{d.strftime('%B %-d, %Y')}"
+    end.join("\n")
+
     response = EmbeddingService.client.chat(
       parameters: {
         model: "gpt-4o-mini",
@@ -47,12 +56,21 @@ class AssistantService
           {
             role: "system",
             content: <<~SYSTEM
-              You are a personal Life OS assistant.
+              You are a personal Life OS assistant with memory.
+
+              Today's date is #{today.strftime('%B %-d, %Y')}.
+
+              Recent calendar reference:
+              #{weekday_map}
+
+              Use this information to correctly interpret:
+              - today
+              - yesterday
+              - weekday names (Sunday, Monday, etc.)
 
               Answer using the provided context.
 
-              If the answer is not in the context,
-              say you don't know.
+              If the answer is not in the context, say you don't know.
 
               Context:
               #{context}
