@@ -34,6 +34,9 @@ class AssistantService
 
     context = chunks.join("\n\n---\n\n")
 
+    puts "Context length: #{context.length}"
+    puts "Chunks used: #{chunks.count}" 
+
     ask_llm(context)
   end
 
