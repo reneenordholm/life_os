@@ -12,7 +12,7 @@ class AssistantService
 
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
     lowered = @question.downcase
-
+    # Structured domain filters
     if lowered.include?("recipe")
       scope = scope.where(documents: { doc_type: "recipe" })
     elsif lowered.include?("grocery")
@@ -21,6 +21,20 @@ class AssistantService
       scope = scope.where(documents: { doc_type: "medical" })
     elsif lowered.include?("trip") || lowered.include?("vacation")
       scope = scope.where(documents: { doc_type: "itinerary" })
+    end
+    # 🗓️ Metadata-based temporal filtering
+    if lowered.include?("today")
+      today = Date.today.to_s
+      scope = scope.where(
+        "documents.metadata ->> 'date' = ?",
+        today
+      )
+    elsif lowered.include?("yesterday")
+      yesterday = (Date.today - 1).to_s
+      scope = scope.where(
+        "documents.metadata ->> 'date' = ?",
+        yesterday
+      )
     end
 
     chunks = scope
@@ -44,8 +58,6 @@ class AssistantService
 
   def ask_llm(context)
     today = Date.today
-    yesterday = today - 1
-    day_name = today.strftime("%A")
 
     weekday_map = (0..6).map do |i|
       d = today - i
