@@ -4,6 +4,9 @@ class DocumentIngestionService
   end
 
   def call
+    # Remove old chunks before re-ingesting
+    @document.document_chunks.delete_all 
+    
     chunks = Chunker.call(@document.content)
 
     chunks.each do |chunk|
