@@ -5,6 +5,9 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   scan_ruby:
     runs-on: ubuntu-latest
@@ -105,6 +108,9 @@ jobs:
         run: bin/rails db:test:prepare test
 
   system-test:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
 
     services:
