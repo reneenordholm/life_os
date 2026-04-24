@@ -16,6 +16,8 @@ class DocumentIngestionService
         content: chunk,
         embedding: embedding
       )
+
+    EntityExtractionService.new(@document).call
     end
   end
 end

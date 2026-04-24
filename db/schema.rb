@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_22_143552) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_24_134522) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -26,6 +26,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_143552) do
     t.index ["embedding"], name: "index_document_chunks_on_embedding", opclass: :vector_cosine_ops, using: :ivfflat
   end
 
+  create_table "document_entities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "document_id", null: false
+    t.bigint "entity_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_document_entities_on_document_id"
+    t.index ["entity_id"], name: "index_document_entities_on_entity_id"
+  end
+
   create_table "documents", force: :cascade do |t|
     t.text "content", null: false
     t.datetime "created_at", null: false
@@ -36,5 +45,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_143552) do
     t.index ["doc_type"], name: "index_documents_on_doc_type"
   end
 
+  create_table "entities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "entity_type"
+    t.jsonb "metadata"
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
   add_foreign_key "document_chunks", "documents"
+  add_foreign_key "document_entities", "documents"
+  add_foreign_key "document_entities", "entities"
 end
