@@ -49,14 +49,34 @@ class AssistantService
       )
     end
 
-    chunks = scope
-      .nearest_neighbors(
-        :embedding,
-        embedding,
-        distance: "cosine"
+    # weekday-aware metadata retrieval
+    weekdays = %w[
+      Sunday
+      Monday
+      Tuesday
+      Wednesday
+      Thursday
+      Friday
+      Saturday
+    ]
+
+    matched_weekday = weekdays.find do |weekday|
+      lowered.include?(weekday.downcase)
+    end
+
+    if matched_weekday
+      scope = scope.where(
+        "documents.metadata ->> 'weekday' = ?",
+        matched_weekday
       )
-      .limit(5)
-      .map(&:content)
+    end
+
+    chunks = retrieve_chunks(scope, embedding)
+
+    if chunks.empty? && matched_entity
+      fallback_scope = DocumentChunk.joins(:document)
+      chunks = retrieve_chunks(fallback_scope, embedding)
+    end
 
     context = chunks.join("\n\n---\n\n")
 
@@ -71,13 +91,24 @@ class AssistantService
 
   def retrieve_chunks(scope, embedding)
     scope
+      .includes(:document)
       .nearest_neighbors(
         :embedding,
         embedding,
         distance: "cosine"
       )
       .limit(5)
-      .map(&:content)
+      .map do |chunk|
+        document = chunk.document
+
+        <<~TEXT
+          Source: #{document.title}
+          Document type: #{document.doc_type}
+          Metadata: #{document.metadata}
+
+          #{chunk.content}
+        TEXT
+    end
   end
 
   def ask_llm(context)
