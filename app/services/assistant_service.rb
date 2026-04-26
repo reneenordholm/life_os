@@ -12,6 +12,17 @@ class AssistantService
 
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
     lowered = @question.downcase
+
+    matched_entity = Entity.find_each.find do |entity|
+      lowered.include?(entity.name.downcase)
+    end
+
+    if matched_entity
+      scope = scope
+        .joins(document: :document_entities)
+        .where(document_entities: { entity_id: matched_entity.id })
+    end
+
     # Structured domain filters
     if lowered.include?("recipe")
       scope = scope.where(documents: { doc_type: "recipe" })
@@ -22,6 +33,7 @@ class AssistantService
     elsif lowered.include?("trip") || lowered.include?("vacation")
       scope = scope.where(documents: { doc_type: "itinerary" })
     end
+
     # 🗓️ Metadata-based temporal filtering
     if lowered.include?("today")
       today = Date.today.to_s
@@ -48,6 +60,7 @@ class AssistantService
 
     context = chunks.join("\n\n---\n\n")
 
+    puts "Matched entity: #{matched_entity&.name || 'none'}"
     puts "Context length: #{context.length}"
     puts "Chunks used: #{chunks.count}"
 
@@ -55,6 +68,17 @@ class AssistantService
   end
 
   private
+
+  def retrieve_chunks(scope, embedding)
+    scope
+      .nearest_neighbors(
+        :embedding,
+        embedding,
+        distance: "cosine"
+      )
+      .limit(5)
+      .map(&:content)
+  end
 
   def ask_llm(context)
     today = Date.today
