@@ -23,7 +23,9 @@ class AssistantService
         .where(document_entities: { entity_id: matched_entity.id })
     end
 
-    # Structured domain filters
+    # Apply structured doc_type filters first.
+    # If one is applied, skip weekday filtering to avoid false matches
+    # like "Sunday sauce recipe".
     structured_filter_applied = false
 
     if lowered.include?("recipe")
