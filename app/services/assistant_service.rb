@@ -24,20 +24,20 @@ class AssistantService
     end
 
     # Structured domain filters
-    domain_filter_applied = false
+    structured_filter_applied = false
 
     if lowered.include?("recipe")
       scope = scope.where(documents: { doc_type: "recipe" })
-      domain_filter_applied = true
+      structured_filter_applied = true
     elsif lowered.include?("grocery")
       scope = scope.where(documents: { doc_type: "grocery" })
-      domain_filter_applied = true
+      structured_filter_applied = true
     elsif lowered.include?("medical") || lowered.include?("doctor")
       scope = scope.where(documents: { doc_type: "medical" })
-      domain_filter_applied = true
+      structured_filter_applied = true
     elsif lowered.include?("trip") || lowered.include?("vacation")
       scope = scope.where(documents: { doc_type: "itinerary" })
-      domain_filter_applied = true
+      structured_filter_applied = true
     end
 
     # 🗓️ Metadata-based temporal filtering
@@ -57,7 +57,7 @@ class AssistantService
 
     # weekday-aware metadata retrieval — only applied for temporal/daily-log queries,
     # not when a structured domain filter (recipe, grocery, etc.) is already in effect.
-    unless domain_filter_applied
+    unless structured_filter_applied
       weekdays = %w[
         Sunday
         Monday
