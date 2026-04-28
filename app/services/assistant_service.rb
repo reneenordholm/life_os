@@ -110,13 +110,18 @@ class AssistantService
       .map do |chunk|
         document = chunk.document
 
-        <<~TEXT
-          Source: #{document.title}
-          Document type: #{document.doc_type}
-          Metadata: #{document.metadata}
+        metadata_keys = %w[date weekday category]
+        filtered_metadata = document.metadata&.slice(*metadata_keys).presence
+        metadata_line = filtered_metadata ? filtered_metadata.to_json : nil
 
-          #{chunk.content}
-        TEXT
+        [
+          "Source: #{document.title}",
+          "Document type: #{document.doc_type}",
+          ("Metadata: #{metadata_line}" if metadata_line),
+          "",
+          chunk.content
+        ].compact.join("\n")
+
     end
   end
 
