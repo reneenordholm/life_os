@@ -121,7 +121,7 @@ class AssistantService
           condition
           last_curve_date
         ]
-        
+
         filtered_metadata = document.metadata&.slice(*metadata_keys).presence
         metadata_line = filtered_metadata ? filtered_metadata.to_json : nil
 
