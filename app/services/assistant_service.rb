@@ -1,5 +1,3 @@
-# app/services/assistant_service.rb
-
 class AssistantService
   def initialize(question)
     @question = question
@@ -55,6 +53,26 @@ class AssistantService
         "documents.metadata ->> 'date' = ?",
         yesterday
       )
+    end
+
+    # natural language time understanding
+    # “last Sunday” “this week” “this weekend”
+    parsed_time = TimeParser.parse(@question)
+
+    if parsed_time
+      case parsed_time[:type]
+      when :date
+        scope = scope.where(
+          "documents.metadata ->> 'date' = ?",
+          parsed_time[:value].to_s
+        )
+      when :range
+        scope = scope.where(
+          "documents.metadata ->> 'date' BETWEEN ? AND ?",
+          parsed_time[:value].first.to_s,
+          parsed_time[:value].last.to_s
+        )
+      end
     end
 
     # weekday-aware metadata retrieval — only applied for temporal/daily-log queries,
