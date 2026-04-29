@@ -23,15 +23,23 @@ class AssistantService
         .where(document_entities: { entity_id: matched_entity.id })
     end
 
-    # Structured domain filters
+    # Apply structured doc_type filters first.
+    # If one is applied, skip weekday filtering to avoid false matches
+    # like "Sunday sauce recipe".
+    structured_filter_applied = false
+
     if lowered.include?("recipe")
       scope = scope.where(documents: { doc_type: "recipe" })
+      structured_filter_applied = true
     elsif lowered.include?("grocery")
       scope = scope.where(documents: { doc_type: "grocery" })
+      structured_filter_applied = true
     elsif lowered.include?("medical") || lowered.include?("doctor")
       scope = scope.where(documents: { doc_type: "medical" })
+      structured_filter_applied = true
     elsif lowered.include?("trip") || lowered.include?("vacation")
       scope = scope.where(documents: { doc_type: "itinerary" })
+      structured_filter_applied = true
     end
 
     # 🗓️ Metadata-based temporal filtering
@@ -49,14 +57,37 @@ class AssistantService
       )
     end
 
-    chunks = scope
-      .nearest_neighbors(
-        :embedding,
-        embedding,
-        distance: "cosine"
-      )
-      .limit(5)
-      .map(&:content)
+    # weekday-aware metadata retrieval — only applied for temporal/daily-log queries,
+    # not when a structured domain filter (recipe, grocery, etc.) is already in effect.
+    unless structured_filter_applied
+      weekdays = %w[
+        Sunday
+        Monday
+        Tuesday
+        Wednesday
+        Thursday
+        Friday
+        Saturday
+      ]
+
+      matched_weekday = weekdays.find do |weekday|
+        lowered.include?(weekday.downcase)
+      end
+
+      if matched_weekday
+        scope = scope.where(
+          "documents.metadata ->> 'weekday' = ?",
+          matched_weekday
+        )
+      end
+    end
+
+    chunks = retrieve_chunks(scope, embedding)
+
+    if chunks.empty? && matched_entity
+      fallback_scope = DocumentChunk.joins(:document)
+      chunks = retrieve_chunks(fallback_scope, embedding)
+    end
 
     context = chunks.join("\n\n---\n\n")
 
@@ -71,13 +102,37 @@ class AssistantService
 
   def retrieve_chunks(scope, embedding)
     scope
+      .includes(:document)
       .nearest_neighbors(
         :embedding,
         embedding,
         distance: "cosine"
       )
       .limit(5)
-      .map(&:content)
+      .map do |chunk|
+        document = chunk.document
+
+        metadata_keys = %w[
+          date
+          weekday
+          category
+          person
+          species
+          condition
+          last_curve_date
+        ]
+
+        filtered_metadata = document.metadata&.slice(*metadata_keys).presence
+        metadata_line = filtered_metadata ? filtered_metadata.to_json : nil
+
+        [
+          "Source: #{document.title}",
+          "Document type: #{document.doc_type}",
+          ("Metadata: #{metadata_line}" if metadata_line),
+          "",
+          chunk.content
+        ].compact.join("\n")
+    end
   end
 
   def ask_llm(context)
