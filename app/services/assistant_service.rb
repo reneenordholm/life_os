@@ -51,9 +51,9 @@ class AssistantService
         )
       when :range
         scope = scope.where(
-          "documents.metadata ->> 'date' BETWEEN ? AND ?",
-          parsed_time[:value].first.to_s,
-          parsed_time[:value].last.to_s
+          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+          parsed_time[:value].first,
+          parsed_time[:value].last
         )
       end
     else
