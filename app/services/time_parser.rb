@@ -4,7 +4,7 @@ class TimeParser
     today = Date.today
 
     # last Sunday, last Monday, etc.
-    if lowered.match(/last (sunday|monday|tuesday|wednesday|thursday|friday|saturday)/)
+    if lowered.match(/\blast\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b(?:[[:punct:]]|$)/)
       weekday = Regexp.last_match(1).capitalize
       target = previous_weekday(today, weekday)
       return { type: :date, value: target }
