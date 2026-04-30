@@ -30,8 +30,12 @@ class TimeParser
 
   def self.previous_weekday(date, weekday_name)
     target_wday = Date::DAYNAMES.index(weekday_name)
+    raise ArgumentError, "Unknown weekday name: #{weekday_name.inspect}" if target_wday.nil?
+
     days_ago = (date.wday - target_wday) % 7
     days_ago = 7 if days_ago.zero?
     date - days_ago
   end
+
+  private_class_method :previous_weekday
 end
