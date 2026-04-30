@@ -1,5 +1,3 @@
-# app/services/assistant_service.rb
-
 class AssistantService
   def initialize(question)
     @question = question
@@ -42,43 +40,54 @@ class AssistantService
       structured_filter_applied = true
     end
 
-    # 🗓️ Metadata-based temporal filtering
-    if lowered.include?("today")
-      today = Date.today.to_s
-      scope = scope.where(
-        "documents.metadata ->> 'date' = ?",
-        today
-      )
-    elsif lowered.include?("yesterday")
-      yesterday = (Date.today - 1).to_s
-      scope = scope.where(
-        "documents.metadata ->> 'date' = ?",
-        yesterday
-      )
-    end
+    parsed_time = TimeParser.parse(@question)
 
-    # weekday-aware metadata retrieval — only applied for temporal/daily-log queries,
-    # not when a structured domain filter (recipe, grocery, etc.) is already in effect.
-    unless structured_filter_applied
-      weekdays = %w[
-        Sunday
-        Monday
-        Tuesday
-        Wednesday
-        Thursday
-        Friday
-        Saturday
-      ]
-
-      matched_weekday = weekdays.find do |weekday|
-        lowered.include?(weekday.downcase)
-      end
-
-      if matched_weekday
+    if parsed_time
+      case parsed_time[:type]
+      when :date
         scope = scope.where(
-          "documents.metadata ->> 'weekday' = ?",
-          matched_weekday
+          "documents.metadata ->> 'date' = ?",
+          parsed_time[:value].to_s
         )
+      when :range
+        scope = scope.where(
+          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+          parsed_time[:value].first,
+          parsed_time[:value].last
+        )
+      end
+    else
+      if lowered.include?("today")
+        scope = scope.where(
+          "documents.metadata ->> 'date' = ?",
+          Date.today.to_s
+        )
+      elsif lowered.include?("yesterday")
+        scope = scope.where(
+          "documents.metadata ->> 'date' = ?",
+          (Date.today - 1).to_s
+        )
+      elsif !structured_filter_applied
+        weekdays = %w[
+          Sunday
+          Monday
+          Tuesday
+          Wednesday
+          Thursday
+          Friday
+          Saturday
+        ]
+
+        matched_weekday = weekdays.find do |weekday|
+          lowered.include?(weekday.downcase)
+        end
+
+        if matched_weekday
+          scope = scope.where(
+            "documents.metadata ->> 'weekday' = ?",
+            matched_weekday
+          )
+        end
       end
     end
 
