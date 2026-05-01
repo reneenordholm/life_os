@@ -3,16 +3,39 @@ class TimeParser
     lowered = question.downcase
     today = Date.today
 
-    # explicit date parsing (e.g. "April 23")
-    if lowered.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}\b/)
-      parsed_date = Date.parse(Regexp.last_match(0)) rescue nil
+    # explicit written date parsing:
+    # "April 23", "April 23rd", "Apr 23", "Apr 23rd"
+    if lowered.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/)
+      date_text = Regexp.last_match(0).gsub(/(st|nd|rd|th)\b/, "")
+
+      parsed_date = begin
+        Date.parse(date_text)
+      rescue Date::Error
+        nil
+      end
 
       if parsed_date
-        # assume current year if not specified
         parsed_date = parsed_date.change(year: Date.today.year)
-
         return { type: :date, value: parsed_date }
       end
+    end
+
+    # explicit numeric date parsing:
+    # "4/23", "04/23", "4/23/2026"
+    if lowered.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/)
+      date_text = Regexp.last_match(0)
+
+      parsed_date = begin
+        if date_text.count("/") == 1
+          Date.strptime("#{date_text}/#{Date.today.year}", "%m/%d/%Y")
+        else
+          Date.strptime(date_text, "%m/%d/%Y")
+        end
+      rescue Date::Error
+        nil
+      end
+
+      return { type: :date, value: parsed_date } if parsed_date
     end
 
     # last Sunday, last Monday, etc.
