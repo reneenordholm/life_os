@@ -22,21 +22,28 @@ class TimeParser
     end
 
     # explicit numeric date parsing:
-    # "4/23", "04/23", "4/23/2026"
+    # "4/23", "04/23", "4/23/2026", "4/23/26"
     if lowered.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/)
       date_text = Regexp.last_match(0)
 
       parsed_date = begin
-        if date_text.count("/") == 1
-          Date.strptime("#{date_text}/#{Date.today.year}", "%m/%d/%Y")
+        parts = date_text.split("/")
+
+        if parts.length == 2
+          Date.strptime("#{date_text}/#{today.year}", "%m/%d/%Y")
+        elsif parts.last.length == 2
+          Date.strptime(date_text, "%m/%d/%y")
         else
           Date.strptime(date_text, "%m/%d/%Y")
         end
       rescue Date::Error
         nil
       end
+    end
 
-      return { type: :date, value: parsed_date } if parsed_date
+    if parsed_date
+      parsed_date = parsed_date.prev_year if parsed_date > today
+      return { type: :date, value: parsed_date }
     end
 
     # last Sunday, last Monday, etc.
