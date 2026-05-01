@@ -39,17 +39,21 @@ class TimeParserTest < ActiveSupport::TestCase
   end
 
   test "parses numeric month day with four digit year" do
-    result = TimeParser.parse("What did I do 4/23/2026?")
+    travel_to Date.new(2026, 5, 1) do
+      result = TimeParser.parse("What did I do 4/23/2026?")
 
-    assert_equal :date, result[:type]
-    assert_equal Date.new(2026, 4, 23), result[:value]
+      assert_equal :date, result[:type]
+      assert_equal Date.new(2026, 4, 23), result[:value]
+    end
   end
 
   test "parses numeric month day with two digit year" do
-    result = TimeParser.parse("What did I do 4/23/26?")
+    travel_to Date.new(2026, 5, 1) do
+      result = TimeParser.parse("What did I do 4/23/26?")
 
-    assert_equal :date, result[:type]
-    assert_equal Date.new(2026, 4, 23), result[:value]
+      assert_equal :date, result[:type]
+      assert_equal Date.new(2026, 4, 23), result[:value]
+    end
   end
 
   test "snaps written future date to previous year" do
