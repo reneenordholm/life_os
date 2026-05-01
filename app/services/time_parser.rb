@@ -3,6 +3,18 @@ class TimeParser
     lowered = question.downcase
     today = Date.today
 
+    # explicit date parsing (e.g. "April 23")
+    if lowered.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}\b/)
+      parsed_date = Date.parse(Regexp.last_match(0)) rescue nil
+
+      if parsed_date
+        # assume current year if not specified
+        parsed_date = parsed_date.change(year: Date.today.year)
+
+        return { type: :date, value: parsed_date }
+      end
+    end
+
     # last Sunday, last Monday, etc.
     if lowered.match(/\blast\s+(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b(?:[[:punct:]]|$)/)
       weekday = Regexp.last_match(1).capitalize
