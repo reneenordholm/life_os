@@ -6,7 +6,7 @@ class TimeParser
     # explicit written date parsing:
     # "April 23", "April 23rd", "Apr 23", "Apr 23rd"
     if lowered.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/)
-      date_text = Regexp.last_match(0).gsub(/(st|nd|rd|th)\b/, "")
+      date_text = Regexp.last_match(0).gsub(/(\d{1,2})(st|nd|rd|th)\b/, "\\1")
 
       parsed_date = begin
         Date.parse(date_text)
@@ -26,12 +26,13 @@ class TimeParser
     if lowered.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/)
       date_text = Regexp.last_match(0)
 
-      parsed_date = begin
-        parts = date_text.split("/")
+      date_parts = date_text.split("/")
+      implicit_year = date_parts.length == 2
 
-        if parts.length == 2
+      parsed_date = begin
+        if implicit_year
           Date.strptime("#{date_text}/#{today.year}", "%m/%d/%Y")
-        elsif parts.last.length == 2
+        elsif date_parts.last.length == 2
           Date.strptime(date_text, "%m/%d/%y")
         else
           Date.strptime(date_text, "%m/%d/%Y")
@@ -39,11 +40,11 @@ class TimeParser
       rescue Date::Error
         nil
       end
-    end
 
-    if parsed_date
-      parsed_date = parsed_date.prev_year if parsed_date > today
-      return { type: :date, value: parsed_date }
+      if parsed_date
+        parsed_date = parsed_date.prev_year if implicit_year && parsed_date > today
+        return { type: :date, value: parsed_date }
+      end
     end
 
     # last Sunday, last Monday, etc.
