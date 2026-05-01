@@ -15,7 +15,8 @@ class TimeParser
       end
 
       if parsed_date
-        parsed_date = parsed_date.change(year: Date.today.year)
+        parsed_date = parsed_date.change(year: today.year)
+        parsed_date = parsed_date.prev_year if parsed_date > today
         return { type: :date, value: parsed_date }
       end
     end
