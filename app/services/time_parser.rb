@@ -1,11 +1,5 @@
 class TimeParser
-  def self.parse(question)
-    lowered = question.downcase
-    today = Date.today
-
-    # explicit written date parsing:
-    # "April 23", "April 23rd", "Apr 23", "Apr 23rd"
-    months = {
+  MONTHS = {
       "jan" => 1, "january" => 1,
       "feb" => 2, "february" => 2,
       "mar" => 3, "march" => 3,
@@ -18,10 +12,16 @@ class TimeParser
       "oct" => 10, "october" => 10,
       "nov" => 11, "november" => 11,
       "dec" => 12, "december" => 12
-    }
+  }.freeze
 
+  def self.parse(question)
+    lowered = question.downcase
+    today = Date.today
+
+    # explicit written date parsing:
+    # "April 23", "April 23rd", "Apr 23", "Apr 23rd"
     if lowered.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?\b/)
-      month = months[Regexp.last_match(1)]
+      month = MONTHS[Regexp.last_match(1).downcase]
       day = Regexp.last_match(2).to_i
 
       parsed_date = begin
