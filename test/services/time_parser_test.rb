@@ -70,4 +70,32 @@ class TimeParserTest < ActiveSupport::TestCase
 
     assert_nil result
   end
+
+  test "returns nil for impossible written dates" do
+    travel_to Date.new(2026, 5, 1) do
+      assert_nil TimeParser.parse("What did I do February 30?")
+      assert_nil TimeParser.parse("What did I do June 31?")
+    end
+  end
+
+  test "returns nil for non-date written inputs" do
+    travel_to Date.new(2026, 5, 1) do
+      assert_nil TimeParser.parse("What did I do April foo?")
+    end
+  end
+
+  test "handles leap year correctly for written dates" do
+    travel_to Date.new(2024, 3, 1) do
+      result = TimeParser.parse("What did I do February 29?")
+
+      assert_equal :date, result[:type]
+      assert_equal Date.new(2024, 2, 29), result[:value]
+    end
+  end
+
+  test "rejects February 29 on non-leap year" do
+    travel_to Date.new(2025, 3, 1) do
+      assert_nil TimeParser.parse("What did I do February 29?")
+    end
+  end
 end

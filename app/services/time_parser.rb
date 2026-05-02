@@ -5,17 +5,32 @@ class TimeParser
 
     # explicit written date parsing:
     # "April 23", "April 23rd", "Apr 23", "Apr 23rd"
-    if lowered.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\b/)
-      date_text = Regexp.last_match(0).gsub(/(\d{1,2})(st|nd|rd|th)\b/, "\\1")
+    months = {
+      "jan" => 1, "january" => 1,
+      "feb" => 2, "february" => 2,
+      "mar" => 3, "march" => 3,
+      "apr" => 4, "april" => 4,
+      "may" => 5,
+      "jun" => 6, "june" => 6,
+      "jul" => 7, "july" => 7,
+      "aug" => 8, "august" => 8,
+      "sep" => 9, "sept" => 9, "september" => 9,
+      "oct" => 10, "october" => 10,
+      "nov" => 11, "november" => 11,
+      "dec" => 12, "december" => 12
+    }
+
+    if lowered.match(/\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|sept|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?\b/)
+      month = months[Regexp.last_match(1)]
+      day = Regexp.last_match(2).to_i
 
       parsed_date = begin
-        Date.parse(date_text)
+        Date.new(today.year, month, day)
       rescue Date::Error
         nil
       end
 
       if parsed_date
-        parsed_date = parsed_date.change(year: today.year)
         parsed_date = parsed_date.prev_year if parsed_date > today
         return { type: :date, value: parsed_date }
       end
