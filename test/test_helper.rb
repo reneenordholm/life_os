@@ -13,7 +13,6 @@ module ActiveSupport
     fixtures :all
 
     # Add more helper methods to be used by all tests here...
-    # Optional but recommended 👇
     teardown do
       travel_back
     end
