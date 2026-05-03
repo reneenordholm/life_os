@@ -98,4 +98,22 @@ class TimeParserTest < ActiveSupport::TestCase
       assert_nil TimeParser.parse("What did I do February 29?")
     end
   end
+
+  test "snaps implicit numeric dates in the future to previous year" do
+    travel_to Date.new(2026, 1, 15) do
+      result = TimeParser.parse("What did I do 12/31?")
+
+      assert_equal :date, result[:type]
+      assert_equal Date.new(2025, 12, 31), result[:value]
+    end
+  end
+
+  test "does not snap explicit numeric dates to previous year" do
+    travel_to Date.new(2026, 1, 15) do
+      result = TimeParser.parse("What did I do 12/31/2026?")
+
+      assert_equal :date, result[:type]
+      assert_equal Date.new(2026, 12, 31), result[:value]
+    end
+  end
 end
