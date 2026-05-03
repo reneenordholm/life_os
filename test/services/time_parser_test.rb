@@ -1,7 +1,6 @@
 require "test_helper"
 
 class TimeParserTest < ActiveSupport::TestCase
-  self.use_transactional_tests = false
   test "parses written dates with full month names" do
     travel_to Date.new(2026, 5, 1) do
       result = TimeParser.parse("What did I do April 23?")
