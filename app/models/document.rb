@@ -11,5 +11,9 @@ class Document < ApplicationRecord
     return unless previous_changes.key?("content")
 
     DocumentIngestionService.new(self).call
+  rescue StandardError => e
+    Rails.logger.error(
+      "Document ingestion failed for Document##{id}: #{e.class}: #{e.message}"
+    )
   end
 end
