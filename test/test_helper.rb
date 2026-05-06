@@ -12,8 +12,18 @@ module ActiveSupport
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
 
-    # Add more helper methods to be used by all tests here...
+    setup do
+      @original_embed = EmbeddingService.method(:embed)
+
+      EmbeddingService.define_singleton_method(:embed) do |_text|
+        Array.new(1536, 0.0)
+      end
+    end
+
     teardown do
+      # restore original embed method
+      EmbeddingService.define_singleton_method(:embed, @original_embed)
+
       travel_back
     end
   end

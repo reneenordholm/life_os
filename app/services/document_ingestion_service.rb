@@ -4,21 +4,23 @@ class DocumentIngestionService
   end
 
   def call
-    # Remove old chunks and entity links before re-ingesting
-    @document.document_chunks.delete_all
-    @document.document_entities.delete_all
-
-    chunks = Chunker.call(@document.content)
-
-    chunks.each do |chunk|
-      embedding = EmbeddingService.embed(chunk)
-
-      @document.document_chunks.create!(
+    chunks_with_embeddings = Chunker.call(@document.content).map do |chunk|
+      {
         content: chunk,
-        embedding: embedding
-      )
+        embedding: EmbeddingService.embed(chunk)
+      }
     end
 
-    EntityExtractionService.new(@document).call
+    # Remove old chunks and entity links before re-ingesting
+    ActiveRecord::Base.transaction do
+      @document.document_chunks.delete_all
+      @document.document_entities.delete_all
+
+      chunks_with_embeddings.each do |attrs|
+        @document.document_chunks.create!(attrs)
+      end
+
+      EntityExtractionService.new(@document).call
+    end
   end
 end
