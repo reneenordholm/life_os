@@ -4,6 +4,8 @@ class DocumentIngestionService
   end
 
   def call
+    return if @document.content.blank?
+
     chunks_with_embeddings = Chunker.call(@document.content).map do |chunk|
       {
         content: chunk,
