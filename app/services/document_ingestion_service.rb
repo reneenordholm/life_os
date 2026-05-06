@@ -4,7 +4,13 @@ class DocumentIngestionService
   end
 
   def call
-    return if @document.content.blank?
+    if @document.content.blank?
+      ActiveRecord::Base.transaction do
+        @document.document_chunks.delete_all
+        @document.document_entities.delete_all
+      end
+      return
+    end
 
     chunks_with_embeddings = Chunker.call(@document.content).map do |chunk|
       {

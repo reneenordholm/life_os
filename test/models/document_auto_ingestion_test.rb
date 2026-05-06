@@ -42,4 +42,20 @@ class DocumentAutoIngestionTest < ActiveSupport::TestCase
 
     assert_equal original_chunk_ids, document.document_chunks.pluck(:id)
   end
+
+  test "clears chunks and entities when content is emptied" do
+    document = Document.create!(
+      title: "Clear Test",
+      doc_type: "note",
+      content: "Marley is here"
+    )
+
+    assert_equal [ "Marley" ], document.entities.pluck(:name)
+
+    document.update!(content: "")
+    document.reload
+
+    assert_equal 0, document.document_chunks.count
+    assert_equal [], document.entities.pluck(:name)
+  end
 end
