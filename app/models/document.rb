@@ -9,10 +9,7 @@ class Document < ApplicationRecord
   private
 
   def mark_for_ingestion
-    @needs_ingestion = saved_change_to_content? ||
-                       saved_change_to_title? ||
-                       saved_change_to_doc_type? ||
-                       saved_change_to_metadata?
+    @needs_ingestion = saved_change_to_content?
   end
 
   def ingest_if_needed
