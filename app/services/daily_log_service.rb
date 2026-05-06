@@ -13,8 +13,6 @@ class DailyLogService
       }
     )
 
-    DocumentIngestionService.new(doc).call
-
     doc
   end
 
