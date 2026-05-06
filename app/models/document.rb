@@ -12,8 +12,7 @@ class Document < ApplicationRecord
 
     DocumentIngestionService.new(self).call
   rescue StandardError => e
-    Rails.logger.error(
-      "Document ingestion failed for Document##{id}: #{e.class}: #{e.message}"
-    )
+    Rails.logger.error("Document ingestion failed for Document##{id}")
+    Rails.logger.error(e.full_message)
   end
 end
