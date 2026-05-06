@@ -4,8 +4,9 @@ class DocumentIngestionService
   end
 
   def call
-    # Remove old chunks before re-ingesting
+    # Remove old chunks and entity links before re-ingesting
     @document.document_chunks.delete_all
+    @document.document_entities.delete_all
 
     chunks = Chunker.call(@document.content)
 
@@ -16,8 +17,8 @@ class DocumentIngestionService
         content: chunk,
         embedding: embedding
       )
+    end
 
     EntityExtractionService.new(@document).call
-    end
   end
 end
