@@ -2,17 +2,21 @@ ENV["RAILS_ENV"] ||= "test"
 require_relative "../config/environment"
 require "rails/test_help"
 
+# Stub embeddings once per worker
+EmbeddingService.define_singleton_method(:embed) do |_text|
+  Array.new(1536, 0.0)
+end
+
 module ActiveSupport
   class TestCase
     include ActiveSupport::Testing::TimeHelpers
 
-    # Run tests in parallel with specified workers
+    # Run tests in parallel
     parallelize(workers: :number_of_processors)
 
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
-    fixtures :all
+    # no fixtures
+    # fixtures :all
 
-    # Add more helper methods to be used by all tests here...
     teardown do
       travel_back
     end
