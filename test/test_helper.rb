@@ -6,27 +6,21 @@ module ActiveSupport
   class TestCase
     include ActiveSupport::Testing::TimeHelpers
 
-    # Run tests in parallel with specified workers
+    # Run tests in parallel
     parallelize(workers: :number_of_processors)
 
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
-
-    # ❌ disable fixtures
+    # ❌ no fixtures
     # fixtures :all
 
-    setup do
-      @original_embed = EmbeddingService.method(:embed)
-
-      EmbeddingService.define_singleton_method(:embed) do |_text|
-        Array.new(1536, 0.0)
-      end
-    end
-
     teardown do
-      # restore original embed method
-      EmbeddingService.define_singleton_method(:embed, @original_embed)
-
       travel_back
     end
+  end
+end
+
+# 👉 Stub embeddings once per worker (safe with process-based parallelization)
+Rails.application.config.after_initialize do
+  EmbeddingService.define_singleton_method(:embed) do |_text|
+    Array.new(1536, 0.0)
   end
 end
