@@ -3,11 +3,10 @@ require_relative "../config/environment"
 require "rails/test_help"
 
 # Stub embeddings once per worker
-Rails.application.config.after_initialize do
-  EmbeddingService.define_singleton_method(:embed) do |_text|
-    Array.new(1536, 0.0)
-  end
+EmbeddingService.define_singleton_method(:embed) do |_text|
+  Array.new(1536, 0.0)
 end
+
 module ActiveSupport
   class TestCase
     include ActiveSupport::Testing::TimeHelpers
