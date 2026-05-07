@@ -3,19 +3,22 @@ require "test_helper"
 class DocumentAutoIngestionTest < ActiveSupport::TestCase
   self.use_transactional_tests = false
 
+  setup do
+    @created_document_ids = []
+  end
+
   teardown do
-    Document.where(
-      title: [
-        "Auto Ingestion Test",
-        "Auto Update Test",
-        "Title Test",
-        "Clear Test"
-      ]
-    ).destroy_all
+    Document.where(id: @created_document_ids).destroy_all
+  end
+
+  def create_document!(attrs)
+    document = Document.create!(attrs)
+    @created_document_ids << document.id
+    document
   end
 
   test "creates chunks and entities when document is created" do
-    document = Document.create!(
+    document = create_document!(
       title: "Auto Ingestion Test",
       doc_type: "note",
       content: "Marley is here"
@@ -26,7 +29,7 @@ class DocumentAutoIngestionTest < ActiveSupport::TestCase
   end
 
   test "rebuilds chunks and replaces stale entity links when content changes" do
-    document = Document.create!(
+    document = create_document!(
       title: "Auto Update Test",
       doc_type: "note",
       content: "Marley is here"
@@ -42,7 +45,7 @@ class DocumentAutoIngestionTest < ActiveSupport::TestCase
   end
 
   test "does not ingest when only title changes" do
-    document = Document.create!(
+    document = create_document!(
       title: "Title Test",
       doc_type: "note",
       content: "Marley is here"
@@ -57,7 +60,7 @@ class DocumentAutoIngestionTest < ActiveSupport::TestCase
   end
 
   test "clears chunks and entities when content is emptied" do
-    document = Document.create!(
+    document = create_document!(
       title: "Clear Test",
       doc_type: "note",
       content: "Marley is here"
