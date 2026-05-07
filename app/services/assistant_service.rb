@@ -50,11 +50,14 @@ class AssistantService
           parsed_time[:value].to_s
         )
       when :range
-        scope = scope.where(
-          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
-          parsed_time[:value].first,
-          parsed_time[:value].last
-        )
+        chunks = retrieve_daily_logs_for_range(parsed_time[:value])
+        context = chunks.join("\n\n---\n\n")
+
+        puts "Matched entity: #{matched_entity&.name || 'none'}"
+        puts "Context length: #{context.length}"
+        puts "Chunks used: #{chunks.count}"
+
+        return ask_llm(context)
       end
     else
       if lowered.include?("today")
@@ -108,6 +111,26 @@ class AssistantService
   end
 
   private
+
+  def retrieve_daily_logs_for_range(date_range)
+    Document
+      .where(doc_type: "daily_log")
+      .where(
+        "CAST(metadata ->> 'date' AS date) BETWEEN ? AND ?",
+        date_range.first,
+        date_range.last
+      )
+      .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
+      .map do |document|
+        <<~TEXT
+          Source: #{document.title}
+          Document type: #{document.doc_type}
+          Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+          #{document.content}
+        TEXT
+      end
+  end
 
   def retrieve_chunks(scope, embedding)
     scope
@@ -171,7 +194,19 @@ class AssistantService
               - yesterday
               - weekday names (Sunday, Monday, etc.)
 
-              Answer using the provided context.
+              If multiple daily logs are provided:
+              - Organize the answer by date in chronological order
+              - Use a clear timeline format (one section per day)
+              - Include:
+                - Work
+                - Activities
+                - Projects
+                - Meals
+                - Notes (if available)
+
+              Keep the answer structured and easy to scan. Avoid long paragraphs.
+
+              Answer using only the provided context.
 
               If the answer is not in the context, say you don't know.
 
