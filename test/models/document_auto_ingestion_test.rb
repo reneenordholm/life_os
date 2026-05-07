@@ -1,6 +1,19 @@
 require "test_helper"
 
 class DocumentAutoIngestionTest < ActiveSupport::TestCase
+  self.use_transactional_tests = false
+
+  teardown do
+    Document.where(
+      title: [
+        "Auto Ingestion Test",
+        "Auto Update Test",
+        "Title Test",
+        "Clear Test"
+      ]
+    ).destroy_all
+  end
+
   test "creates chunks and entities when document is created" do
     document = Document.create!(
       title: "Auto Ingestion Test",
