@@ -55,11 +55,23 @@ class AssistantService
 
         if !structured_filter_applied && matched_entity.nil?
           daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
-          context = daily_logs.join("\n\n---\n\n")
+          selected_logs = []
+          context_length = 0
+          separator = "\n\n---\n\n"
 
-          if context.length > MAX_RANGE_CONTEXT_LENGTH
-            context = context.first(MAX_RANGE_CONTEXT_LENGTH)
+          daily_logs.each do |daily_log|
+            projected_length =
+              context_length +
+              daily_log.length +
+              (selected_logs.empty? ? 0 : separator.length)
+
+            break if projected_length > MAX_RANGE_CONTEXT_LENGTH
+
+            selected_logs << daily_log
+            context_length = projected_length
           end
+
+          context = selected_logs.join(separator)
 
           return ask_llm(context)
         end
