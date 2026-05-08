@@ -93,7 +93,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "range query respects structured filters (does not use daily logs)" do
+  test "range query respects structured filters and excludes daily logs" do
     travel_to Date.new(2026, 5, 7) do
       create_document!(
         title: "Recipe - Tacos",
@@ -104,12 +104,21 @@ class AssistantServiceTest < ActiveSupport::TestCase
         content: "Made tacos"
       )
 
+      create_document!(
+        title: "📓 Daily Log — 2026-05-05",
+        doc_type: "daily_log",
+        metadata: {
+          date: "2026-05-05",
+          weekday: "Tuesday",
+          category: "daily"
+        },
+        content: "Daily log content that should not be included"
+      )
+
       parsed_time = TimeParser.parse("What recipes did I make this week?")
 
-      # Simulate scope behavior instead of calling LLM
       scope = DocumentChunk.joins(:document)
       scope = scope.where(documents: { doc_type: "recipe" })
-
       scope = scope.where(
         "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
         parsed_time[:value].first,
@@ -119,6 +128,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
       results = scope.pluck("documents.title").uniq
 
       assert_includes results, "Recipe - Tacos"
+      assert_not_includes results, "📓 Daily Log — 2026-05-05"
     end
   end
 end
