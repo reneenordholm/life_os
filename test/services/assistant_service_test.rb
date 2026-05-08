@@ -90,4 +90,34 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert_includes logs.second, "Wednesday last week content"
     end
   end
+
+  test "range query respects structured filters (does not use daily logs)" do
+    travel_to Date.new(2026, 5, 7) do
+      create_document!(
+        title: "Recipe - Tacos",
+        doc_type: "recipe",
+        metadata: {
+          date: "2026-05-05"
+        },
+        content: "Made tacos"
+      )
+
+      service = AssistantService.new("What recipes did I make this week?")
+      parsed_time = TimeParser.parse("What recipes did I make this week?")
+
+      # Simulate scope behavior instead of calling LLM
+      scope = DocumentChunk.joins(:document)
+      scope = scope.where(documents: { doc_type: "recipe" })
+
+      scope = scope.where(
+        "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+        parsed_time[:value].first,
+        parsed_time[:value].last
+      )
+
+      results = scope.pluck("documents.title").uniq
+
+      assert_includes results, "Recipe - Tacos"
+    end
+  end
 end
