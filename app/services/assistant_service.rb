@@ -54,8 +54,10 @@ class AssistantService
         range_end = parsed_time[:value].end
 
         if !structured_filter_applied
-          daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
-
+          daily_logs = retrieve_daily_logs_for_range(
+            parsed_time[:value],
+            entity: matched_entity
+          )
           if matched_entity
             daily_logs = filter_logs_by_entity(daily_logs, matched_entity)
           end
@@ -165,14 +167,22 @@ class AssistantService
     end
   end
 
-  def retrieve_daily_logs_for_range(date_range)
-    Document
+  def retrieve_daily_logs_for_range(date_range, entity: nil)
+    scope = Document
       .where(doc_type: "daily_log")
       .where(
         "CAST(metadata ->> 'date' AS date) BETWEEN ? AND ?",
         date_range.begin,
         date_range.end
       )
+
+    if entity
+      scope = scope
+        .joins(:document_entities)
+        .where(document_entities: { entity_id: entity.id })
+    end
+
+    scope
       .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
       .map do |document|
         <<~TEXT
