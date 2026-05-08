@@ -1,11 +1,11 @@
 class AssistantService
+  MAX_RANGE_CONTEXT_LENGTH = 12_000
+
   def initialize(question)
     @question = question
   end
 
   def call
-    embedding = EmbeddingService.embed(@question)
-
     scope = DocumentChunk.joins(:document)
 
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
@@ -50,10 +50,51 @@ class AssistantService
           parsed_time[:value].to_s
         )
       when :range
+        range_start = parsed_time[:value].begin
+        range_end = parsed_time[:value].end
+
+        if !structured_filter_applied && matched_entity.nil?
+          daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
+          selected_logs = []
+          context_length = 0
+          separator = "\n\n---\n\n"
+
+          daily_logs.each do |daily_log|
+            projected_length =
+              context_length +
+              daily_log.length +
+              (selected_logs.empty? ? 0 : separator.length)
+
+            break if projected_length > MAX_RANGE_CONTEXT_LENGTH
+
+            selected_logs << daily_log
+            context_length = projected_length
+          end
+
+          if selected_logs.any?
+            context_truncated = selected_logs.count < daily_logs.count
+            context = selected_logs.join(separator)
+
+            if context_truncated
+              context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+            end
+
+            if Rails.env.development?
+              Rails.logger.debug(
+                "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+                "context_length=#{context.length} logs=#{selected_logs.count} " \
+                "truncated=#{context_truncated}"
+              )
+            end
+
+            return ask_llm(context)
+          end
+        end
+
         scope = scope.where(
           "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
-          parsed_time[:value].first,
-          parsed_time[:value].last
+          range_start,
+          range_end
         )
       end
     else
@@ -91,6 +132,7 @@ class AssistantService
       end
     end
 
+    embedding = EmbeddingService.embed(@question)
     chunks = retrieve_chunks(scope, embedding)
 
     if chunks.empty? && matched_entity
@@ -100,14 +142,37 @@ class AssistantService
 
     context = chunks.join("\n\n---\n\n")
 
-    puts "Matched entity: #{matched_entity&.name || 'none'}"
-    puts "Context length: #{context.length}"
-    puts "Chunks used: #{chunks.count}"
+    if Rails.env.development?
+      Rails.logger.debug(
+        "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+        "context_length=#{context.length} chunks=#{chunks.count}"
+      )
+    end
 
     ask_llm(context)
   end
 
   private
+
+  def retrieve_daily_logs_for_range(date_range)
+    Document
+      .where(doc_type: "daily_log")
+      .where(
+        "CAST(metadata ->> 'date' AS date) BETWEEN ? AND ?",
+        date_range.begin,
+        date_range.end
+      )
+      .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
+      .map do |document|
+        <<~TEXT
+          Source: #{document.title}
+          Document type: #{document.doc_type}
+          Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+          #{document.content}
+        TEXT
+      end
+  end
 
   def retrieve_chunks(scope, embedding)
     scope
@@ -171,7 +236,19 @@ class AssistantService
               - yesterday
               - weekday names (Sunday, Monday, etc.)
 
-              Answer using the provided context.
+              If multiple daily logs are provided:
+              - Organize the answer by date in chronological order
+              - Use a clear timeline format (one section per day)
+              - Include:
+                - Work
+                - Activities
+                - Projects
+                - Meals
+                - Notes (if available)
+
+              Keep the answer structured and easy to scan. Avoid long paragraphs.
+
+              Answer using only the provided context.
 
               If the answer is not in the context, say you don't know.
 
