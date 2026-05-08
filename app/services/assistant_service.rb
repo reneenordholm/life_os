@@ -50,14 +50,25 @@ class AssistantService
           parsed_time[:value].to_s
         )
       when :range
-        chunks = retrieve_daily_logs_for_range(parsed_time[:value])
-        context = chunks.join("\n\n---\n\n")
+        range_start = parsed_time[:value].first
+        range_end = parsed_time[:value].last
 
-        puts "Matched entity: #{matched_entity&.name || 'none'}"
-        puts "Context length: #{context.length}"
-        puts "Chunks used: #{chunks.count}"
+        if !structured_filter_applied && matched_entity.nil?
+          chunks = retrieve_daily_logs_for_range(parsed_time[:value])
+          context = chunks.join("\n\n---\n\n")
 
-        return ask_llm(context)
+          puts "Matched entity: #{matched_entity&.name || 'none'}"
+          puts "Context length: #{context.length}"
+          puts "Chunks used: #{chunks.count}"
+
+          return ask_llm(context)
+        end
+
+        scope = scope.where(
+          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+          range_start,
+          range_end
+        )
       end
     else
       if lowered.include?("today")
