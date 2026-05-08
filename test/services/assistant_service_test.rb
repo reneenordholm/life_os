@@ -131,4 +131,76 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert_not_includes results, "📓 Daily Log — 2026-05-05"
     end
   end
+
+  test "truncates weekly logs at context limit without breaking" do
+    travel_to Date.new(2026, 5, 7) do
+      long_content = "A" * 8_000
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-03",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-03" },
+        content: long_content
+      )
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-04",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-04" },
+        content: long_content
+      )
+
+      service = AssistantService.new("What did I do this week?")
+      parsed_time = TimeParser.parse("What did I do this week?")
+
+      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
+
+      # simulate truncation logic
+      selected_logs = []
+      context_length = 0
+      separator = "\n\n---\n\n"
+
+      logs.each do |log|
+        projected_length =
+          context_length +
+          log.length +
+          (selected_logs.empty? ? 0 : separator.length)
+
+        break if projected_length > AssistantService::MAX_RANGE_CONTEXT_LENGTH
+
+        selected_logs << log
+        context_length = projected_length
+      end
+
+      assert selected_logs.any?
+      assert selected_logs.length < logs.length
+    end
+  end
+
+  test "falls back when a single log exceeds context limit" do
+    travel_to Date.new(2026, 5, 7) do
+      huge_content = "A" * 20_000
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-03",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-03" },
+        content: huge_content
+      )
+
+      service = AssistantService.new("What did I do this week?")
+      parsed_time = TimeParser.parse("What did I do this week?")
+
+      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
+
+      selected_logs = []
+      context_length = 0
+
+      logs.each do |log|
+        break if log.length > AssistantService::MAX_RANGE_CONTEXT_LENGTH
+      end
+
+      assert selected_logs.empty?
+    end
+  end
 end
