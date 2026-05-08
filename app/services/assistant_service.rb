@@ -71,9 +71,18 @@ class AssistantService
             context_length = projected_length
           end
 
-          context = selected_logs.join(separator)
+          if selected_logs.any?
+            context = selected_logs.join(separator)
 
-          return ask_llm(context)
+            if Rails.env.development?
+              Rails.logger.debug(
+                "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+                "context_length=#{context.length} logs=#{selected_logs.count}"
+              )
+            end
+
+            return ask_llm(context)
+          end
         end
 
         scope = scope.where(
