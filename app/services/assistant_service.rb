@@ -1,4 +1,6 @@
 class AssistantService
+  MAX_RANGE_CONTEXT_LENGTH = 12_000
+
   def initialize(question)
     @question = question
   end
@@ -55,11 +57,8 @@ class AssistantService
           daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
           context = daily_logs.join("\n\n---\n\n")
 
-          if Rails.env.development?
-            Rails.logger.debug(
-              "AssistantService | entity=#{matched_entity&.name || 'none'} " \
-              "context_length=#{context.length} logs=#{daily_logs.count}"
-            )
+          if context.length > MAX_RANGE_CONTEXT_LENGTH
+            context = context.first(MAX_RANGE_CONTEXT_LENGTH)
           end
 
           return ask_llm(context)
