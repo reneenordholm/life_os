@@ -93,7 +93,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "range query respects structured filters and excludes daily logs" do
+  test "range query SQL filtering returns recipe documents only" do
     travel_to Date.new(2026, 5, 7) do
       create_document!(
         title: "Recipe - Tacos",
