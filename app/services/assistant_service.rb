@@ -52,13 +52,13 @@ class AssistantService
         range_end = parsed_time[:value].last
 
         if !structured_filter_applied && matched_entity.nil?
-          chunks = retrieve_daily_logs_for_range(parsed_time[:value])
-          context = chunks.join("\n\n---\n\n")
+          daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
+          context = daily_logs.join("\n\n---\n\n")
 
           if Rails.env.development?
             Rails.logger.debug(
               "AssistantService | entity=#{matched_entity&.name || 'none'} " \
-              "context_length=#{context.length} chunks=#{chunks.count}"
+              "context_length=#{context.length} logs=#{daily_logs.count}"
             )
           end
 
