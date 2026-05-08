@@ -113,9 +113,12 @@ class AssistantService
 
     context = chunks.join("\n\n---\n\n")
 
-    puts "Matched entity: #{matched_entity&.name || 'none'}"
-    puts "Context length: #{context.length}"
-    puts "Chunks used: #{chunks.count}"
+    if Rails.env.development?
+      Rails.logger.debug(
+        "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+        "context_length=#{context.length} chunks=#{chunks.count}"
+      )
+    end
 
     ask_llm(context)
   end
