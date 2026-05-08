@@ -17,7 +17,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
     doc
   end
 
-  test "summarizes weekly daily logs chronologically" do
+  test "retrieves this week daily logs chronologically" do
     travel_to Date.new(2026, 5, 7) do
       create_document!(
         title: "📓 Daily Log — 2026-05-05",
