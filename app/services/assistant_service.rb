@@ -72,12 +72,18 @@ class AssistantService
           end
 
           if selected_logs.any?
+            context_truncated = selected_logs.count < daily_logs.count
             context = selected_logs.join(separator)
+
+            if context_truncated
+              context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+            end
 
             if Rails.env.development?
               Rails.logger.debug(
                 "AssistantService | entity=#{matched_entity&.name || 'none'} " \
-                "context_length=#{context.length} logs=#{selected_logs.count}"
+                "context_length=#{context.length} logs=#{selected_logs.count} " \
+                "truncated=#{context_truncated}"
               )
             end
 
