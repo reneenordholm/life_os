@@ -4,8 +4,6 @@ class AssistantService
   end
 
   def call
-    embedding = EmbeddingService.embed(@question)
-
     scope = DocumentChunk.joins(:document)
 
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
@@ -105,6 +103,7 @@ class AssistantService
       end
     end
 
+    embedding = EmbeddingService.embed(@question)
     chunks = retrieve_chunks(scope, embedding)
 
     if chunks.empty? && matched_entity
