@@ -55,9 +55,12 @@ class AssistantService
           chunks = retrieve_daily_logs_for_range(parsed_time[:value])
           context = chunks.join("\n\n---\n\n")
 
-          puts "Matched entity: #{matched_entity&.name || 'none'}"
-          puts "Context length: #{context.length}"
-          puts "Chunks used: #{chunks.count}"
+          if Rails.env.development?
+            Rails.logger.debug(
+              "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+              "context_length=#{context.length} chunks=#{chunks.count}"
+            )
+          end
 
           return ask_llm(context)
         end
