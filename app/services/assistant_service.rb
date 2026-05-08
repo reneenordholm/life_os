@@ -50,8 +50,8 @@ class AssistantService
           parsed_time[:value].to_s
         )
       when :range
-        range_start = parsed_time[:value].first
-        range_end = parsed_time[:value].last
+        range_start = parsed_time[:value].begin
+        range_end = parsed_time[:value].end
 
         if !structured_filter_applied && matched_entity.nil?
           daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
