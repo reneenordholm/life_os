@@ -197,8 +197,13 @@ class AssistantServiceTest < ActiveSupport::TestCase
       parsed_time = TimeParser.parse("What did I do with Mom this week?")
       logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
 
-      filtered = service.send(:filter_logs_by_entity, logs, OpenStruct.new(name: "Mom"))
+      entity = Entity.find_or_create_by!(name: "Mom")
 
+      filtered = service.send(
+        :filter_logs_by_entity,
+        logs,
+        entity
+      )
       assert_equal 1, filtered.count
       assert_includes filtered.first, "Mom"
     end
