@@ -176,31 +176,4 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert selected_logs.length < logs.length
     end
   end
-
-  test "falls back when a single log exceeds context limit" do
-    travel_to Date.new(2026, 5, 7) do
-      huge_content = "A" * 20_000
-
-      create_document!(
-        title: "📓 Daily Log — 2026-05-03",
-        doc_type: "daily_log",
-        metadata: { date: "2026-05-03" },
-        content: huge_content
-      )
-
-      service = AssistantService.new("What did I do this week?")
-      parsed_time = TimeParser.parse("What did I do this week?")
-
-      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
-
-      selected_logs = []
-      context_length = 0
-
-      logs.each do |log|
-        break if log.length > AssistantService::MAX_RANGE_CONTEXT_LENGTH
-      end
-
-      assert selected_logs.empty?
-    end
-  end
 end
