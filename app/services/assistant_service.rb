@@ -159,8 +159,8 @@ class AssistantService
       .where(doc_type: "daily_log")
       .where(
         "CAST(metadata ->> 'date' AS date) BETWEEN ? AND ?",
-        date_range.first,
-        date_range.last
+        date_range.begin,
+        date_range.end
       )
       .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
       .map do |document|
