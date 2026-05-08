@@ -104,7 +104,6 @@ class AssistantServiceTest < ActiveSupport::TestCase
         content: "Made tacos"
       )
 
-      service = AssistantService.new("What recipes did I make this week?")
       parsed_time = TimeParser.parse("What recipes did I make this week?")
 
       # Simulate scope behavior instead of calling LLM
