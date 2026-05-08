@@ -53,8 +53,13 @@ class AssistantService
         range_start = parsed_time[:value].begin
         range_end = parsed_time[:value].end
 
-        if !structured_filter_applied && matched_entity.nil?
+        if !structured_filter_applied
           daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
+
+          if matched_entity
+            daily_logs = filter_logs_by_entity(daily_logs, matched_entity)
+          end
+
           selected_logs = []
           context_length = 0
           separator = "\n\n---\n\n"
@@ -153,6 +158,12 @@ class AssistantService
   end
 
   private
+
+  def filter_logs_by_entity(logs, entity)
+    logs.select do |log|
+      log.downcase.include?(entity.name.downcase)
+    end
+  end
 
   def retrieve_daily_logs_for_range(date_range)
     Document

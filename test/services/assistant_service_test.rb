@@ -176,4 +176,31 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert selected_logs.length < logs.length
     end
   end
+
+  test "filters weekly logs by entity" do
+    travel_to Date.new(2026, 5, 7) do
+      create_document!(
+        title: "📓 Daily Log — 2026-05-05",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-05" },
+        content: "Spent time with Mom"
+      )
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-06",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-06" },
+        content: "Worked all day"
+      )
+
+      service = AssistantService.new("What did I do with Mom this week?")
+      parsed_time = TimeParser.parse("What did I do with Mom this week?")
+      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
+
+      filtered = service.send(:filter_logs_by_entity, logs, OpenStruct.new(name: "Mom"))
+
+      assert_equal 1, filtered.count
+      assert_includes filtered.first, "Mom"
+    end
+  end
 end
