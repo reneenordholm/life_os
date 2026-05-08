@@ -181,7 +181,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
     travel_to Date.new(2026, 5, 7) do
       entity = Entity.find_or_create_by!(name: "Mom")
 
-      create_document!(
+      mom_log = create_document!(
         title: "📓 Daily Log — 2026-05-05",
         doc_type: "daily_log",
         metadata: { date: "2026-05-05" },
@@ -193,6 +193,11 @@ class AssistantServiceTest < ActiveSupport::TestCase
         doc_type: "daily_log",
         metadata: { date: "2026-05-06" },
         content: "Worked all day"
+      )
+
+      DocumentEntity.find_or_create_by!(
+        document: mom_log,
+        entity: entity
       )
 
       service = AssistantService.new("What did I do with Mom this week?")
