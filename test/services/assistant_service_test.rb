@@ -1,6 +1,8 @@
 require "test_helper"
 
 class AssistantServiceTest < ActiveSupport::TestCase
+  self.use_transactional_tests = false
+
   setup do
     @created_document_ids = []
   end
