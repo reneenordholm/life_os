@@ -179,6 +179,8 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
   test "filters weekly logs by entity" do
     travel_to Date.new(2026, 5, 7) do
+      entity = Entity.find_or_create_by!(name: "Mom")
+
       create_document!(
         title: "📓 Daily Log — 2026-05-05",
         doc_type: "daily_log",
@@ -195,17 +197,16 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
       service = AssistantService.new("What did I do with Mom this week?")
       parsed_time = TimeParser.parse("What did I do with Mom this week?")
-      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
 
-      entity = Entity.find_or_create_by!(name: "Mom")
-
-      filtered = service.send(
-        :filter_logs_by_entity,
-        logs,
-        entity
+      logs = service.send(
+        :retrieve_daily_logs_for_range,
+        parsed_time[:value],
+        entity: entity
       )
-      assert_equal 1, filtered.count
-      assert_includes filtered.first, "Mom"
+
+      assert_equal 1, logs.count
+      assert_includes logs.first, "Mom"
+      assert_not_includes logs.first, "Worked all day"
     end
   end
 end

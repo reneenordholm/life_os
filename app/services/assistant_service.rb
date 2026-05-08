@@ -58,9 +58,6 @@ class AssistantService
             parsed_time[:value],
             entity: matched_entity
           )
-          if matched_entity
-            daily_logs = filter_logs_by_entity(daily_logs, matched_entity)
-          end
 
           selected_logs = []
           context_length = 0
@@ -160,12 +157,6 @@ class AssistantService
   end
 
   private
-
-  def filter_logs_by_entity(logs, entity)
-    logs.select do |log|
-      log.downcase.include?(entity.name.downcase)
-    end
-  end
 
   def retrieve_daily_logs_for_range(date_range, entity: nil)
     scope = Document
