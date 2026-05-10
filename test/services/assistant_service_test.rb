@@ -10,9 +10,20 @@ class AssistantServiceTest < ActiveSupport::TestCase
   end
 
   teardown do
+    linked_entity_ids = DocumentEntity
+      .where(document_id: @created_document_ids)
+      .pluck(:entity_id)
+
     DocumentEntity.where(document_id: @created_document_ids).delete_all
     Document.where(id: @created_document_ids).destroy_all
-    Entity.where(id: @created_entity_ids).destroy_all
+
+    orphaned_entity_ids = Entity
+      .where(id: linked_entity_ids + @created_entity_ids)
+      .left_outer_joins(:document_entities)
+      .where(document_entities: { id: nil })
+      .pluck(:id)
+
+    Entity.where(id: orphaned_entity_ids).destroy_all
   end
 
   def create_document!(attrs)
