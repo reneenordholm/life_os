@@ -1,4 +1,5 @@
 require "test_helper"
+require "securerandom"
 
 class AssistantServiceTest < ActiveSupport::TestCase
   self.use_transactional_tests = false
@@ -22,7 +23,9 @@ class AssistantServiceTest < ActiveSupport::TestCase
   end
 
   def create_entity!(attrs)
-    entity = Entity.find_or_create_by!(attrs)
+    unique_name = "#{attrs[:name]}-test-#{SecureRandom.hex(4)}"
+
+    entity = Entity.create!(attrs.merge(name: unique_name))
     @created_entity_ids << entity.id
     entity
   end
