@@ -11,8 +11,9 @@ class AssistantService
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
     lowered = @question.downcase
 
-    matched_entity = Entity.find_each.find do |entity|
-      lowered.include?(entity.name.downcase)
+    matched_entity = entities.find do |entity|
+      pattern = /\b#{Regexp.escape(entity.name.downcase)}\b/
+      lowered.match?(pattern)
     end
 
     if matched_entity
