@@ -5,16 +5,26 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
   setup do
     @created_document_ids = []
+    @created_entity_ids = []
   end
 
   teardown do
+    DocumentEntity.where(document_id: @created_document_ids).delete_all
+    DocumentEntity.where(entity_id: @created_entity_ids).delete_all
     Document.where(id: @created_document_ids).destroy_all
+    Entity.where(id: @created_entity_ids).destroy_all
   end
 
   def create_document!(attrs)
-    doc = Document.create!(attrs)
-    @created_document_ids << doc.id
-    doc
+    document = Document.create!(attrs)
+    @created_document_ids << document.id
+    document
+  end
+
+  def create_entity!(attrs)
+    entity = Entity.find_or_create_by!(attrs)
+    @created_entity_ids << entity.id
+    entity
   end
 
   test "retrieves this week daily logs chronologically" do
@@ -179,7 +189,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
   test "filters weekly logs by entity" do
     travel_to Date.new(2026, 5, 7) do
-      entity = Entity.find_or_create_by!(name: "Mom")
+      entity = create_entity!(name: "Mom")
 
       mom_log = create_document!(
         title: "📓 Daily Log — 2026-05-05",
