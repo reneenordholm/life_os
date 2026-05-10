@@ -1,20 +1,43 @@
 require "test_helper"
+require "securerandom"
 
 class AssistantServiceTest < ActiveSupport::TestCase
   self.use_transactional_tests = false
 
   setup do
     @created_document_ids = []
+    @created_entity_ids = []
   end
 
   teardown do
+    linked_entity_ids = DocumentEntity
+      .where(document_id: @created_document_ids)
+      .pluck(:entity_id)
+
+    DocumentEntity.where(document_id: @created_document_ids).delete_all
     Document.where(id: @created_document_ids).destroy_all
+
+    orphaned_entity_ids = Entity
+      .where(id: linked_entity_ids + @created_entity_ids)
+      .left_outer_joins(:document_entities)
+      .where(document_entities: { id: nil })
+      .pluck(:id)
+
+    Entity.where(id: orphaned_entity_ids).destroy_all
   end
 
   def create_document!(attrs)
-    doc = Document.create!(attrs)
-    @created_document_ids << doc.id
-    doc
+    document = Document.create!(attrs)
+    @created_document_ids << document.id
+    document
+  end
+
+  def create_entity!(attrs)
+    unique_name = "#{attrs[:name]}-test-#{SecureRandom.hex(4)}"
+
+    entity = Entity.create!(attrs.merge(name: unique_name))
+    @created_entity_ids << entity.id
+    entity
   end
 
   test "retrieves this week daily logs chronologically" do
@@ -174,6 +197,81 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
       assert selected_logs.any?
       assert selected_logs.length < logs.length
+    end
+  end
+
+  test "filters weekly logs by entity" do
+    travel_to Date.new(2026, 5, 7) do
+      entity = create_entity!(name: "Mom")
+
+      mom_log = create_document!(
+        title: "📓 Daily Log — 2026-05-05",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-05" },
+        content: "Spent time with Mom"
+      )
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-06",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-06" },
+        content: "Worked all day"
+      )
+
+      DocumentEntity.find_or_create_by!(
+        document: mom_log,
+        entity: entity
+      )
+
+      service = AssistantService.new("What did I do with Mom this week?")
+      parsed_time = TimeParser.parse("What did I do with Mom this week?")
+
+      logs = service.send(
+        :retrieve_daily_logs_for_range,
+        parsed_time[:value],
+        entity: entity
+      )
+
+      assert_equal 1, logs.count
+      assert_includes logs.first, "Mom"
+      assert_not_includes logs.first, "Worked all day"
+    end
+  end
+
+  test "entity range query includes only entity-linked daily logs" do
+    travel_to Date.new(2026, 5, 7) do
+      entity = create_entity!(name: "Mom")
+
+      mom_log = create_document!(
+        title: "📓 Daily Log — 2026-05-05",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-05" },
+        content: "Spent time with #{entity.name}"
+      )
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-06",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-06" },
+        content: "Worked all day"
+      )
+
+      DocumentEntity.create!(
+        document: mom_log,
+        entity: entity
+      )
+
+      service = AssistantService.new("What did I do with #{entity.name} this week?")
+      captured_context = nil
+
+      service.define_singleton_method(:ask_llm) do |context|
+        captured_context = context
+        "stubbed response"
+      end
+
+      assert_equal "stubbed response", service.call
+      assert_includes captured_context, "Spent time with #{entity.name}"
+      assert_not_includes captured_context, "Worked all day"
     end
   end
 end
