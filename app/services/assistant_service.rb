@@ -172,7 +172,7 @@ class AssistantService
       scope = scope
         .joins(:document_entities)
         .where(document_entities: { entity_id: entity.id })
-        .distinct
+        .group("documents.id")
     end
 
     scope
