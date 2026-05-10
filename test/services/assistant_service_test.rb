@@ -226,4 +226,41 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert_not_includes logs.first, "Worked all day"
     end
   end
+
+  test "entity range query includes only entity-linked daily logs" do
+    travel_to Date.new(2026, 5, 7) do
+      entity = create_entity!(name: "Mom")
+
+      mom_log = create_document!(
+        title: "📓 Daily Log — 2026-05-05",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-05" },
+        content: "Spent time with #{entity.name}"
+      )
+
+      create_document!(
+        title: "📓 Daily Log — 2026-05-06",
+        doc_type: "daily_log",
+        metadata: { date: "2026-05-06" },
+        content: "Worked all day"
+      )
+
+      DocumentEntity.create!(
+        document: mom_log,
+        entity: entity
+      )
+
+      service = AssistantService.new("What did I do with #{entity.name} this week?")
+      captured_context = nil
+
+      service.define_singleton_method(:ask_llm) do |context|
+        captured_context = context
+        "stubbed response"
+      end
+
+      assert_equal "stubbed response", service.call
+      assert_includes captured_context, "Spent time with #{entity.name}"
+      assert_not_includes captured_context, "Worked all day"
+    end
+  end
 end
