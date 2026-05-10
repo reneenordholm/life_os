@@ -11,7 +11,6 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
   teardown do
     DocumentEntity.where(document_id: @created_document_ids).delete_all
-    DocumentEntity.where(entity_id: @created_entity_ids).delete_all
     Document.where(id: @created_document_ids).destroy_all
     Entity.where(id: @created_entity_ids).destroy_all
   end
