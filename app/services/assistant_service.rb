@@ -11,8 +11,9 @@ class AssistantService
     # Soft filtering for highly structured data like recipes, grocery lists, and medical notes.
     lowered = @question.downcase
 
-    matched_entity = Entity.find_each.find do |entity|
-      lowered.include?(entity.name.downcase)
+    matched_entity = entities.detect do |entity|
+      pattern = /\b#{Regexp.escape(entity.name.downcase)}\b/
+      lowered.match?(pattern)
     end
 
     if matched_entity
@@ -53,8 +54,12 @@ class AssistantService
         range_start = parsed_time[:value].begin
         range_end = parsed_time[:value].end
 
-        if !structured_filter_applied && matched_entity.nil?
-          daily_logs = retrieve_daily_logs_for_range(parsed_time[:value])
+        if !structured_filter_applied
+          daily_logs = retrieve_daily_logs_for_range(
+            parsed_time[:value],
+            entity: matched_entity
+          )
+
           selected_logs = []
           context_length = 0
           separator = "\n\n---\n\n"
@@ -154,14 +159,27 @@ class AssistantService
 
   private
 
-  def retrieve_daily_logs_for_range(date_range)
-    Document
+  def entities
+    @entities ||= Entity.all
+  end
+
+  def retrieve_daily_logs_for_range(date_range, entity: nil)
+    scope = Document
       .where(doc_type: "daily_log")
       .where(
         "CAST(metadata ->> 'date' AS date) BETWEEN ? AND ?",
         date_range.begin,
         date_range.end
       )
+
+    if entity
+      scope = scope
+        .joins(:document_entities)
+        .where(document_entities: { entity_id: entity.id })
+        .group("documents.id")
+    end
+
+    scope
       .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
       .map do |document|
         <<~TEXT
