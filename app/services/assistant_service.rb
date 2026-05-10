@@ -159,6 +159,10 @@ class AssistantService
 
   private
 
+  def entities
+    @entities ||= Entity.all
+  end
+
   def retrieve_daily_logs_for_range(date_range, entity: nil)
     scope = Document
       .where(doc_type: "daily_log")
