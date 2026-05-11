@@ -77,35 +77,46 @@ class AssistantService
           end
 
           if selected_logs.any?
+            daily_summaries = []
             context_truncated = selected_logs.count < daily_logs.count
 
-            daily_summaries = selected_logs.map do |daily_log|
-              summarize_daily_log(daily_log)
+            selected_logs.each do |daily_log|
+              summary = summarize_daily_log(daily_log)
+              projected_context = (daily_summaries + [ summary ]).join(separator)
+
+              if projected_context.length > MAX_RANGE_CONTEXT_LENGTH
+                context_truncated = true
+                break
+              end
+
+              daily_summaries << summary
             end
 
-            context = daily_summaries.join(separator)
+            if daily_summaries.any?
+              context = daily_summaries.join(separator)
 
-            if context_truncated
-              context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+              if context_truncated
+                context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+              end
+
+              if Rails.env.development?
+                Rails.logger.debug(
+                  "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+                  "context_length=#{context.length} logs=#{daily_summaries.count} " \
+                  "truncated=#{context_truncated}"
+                )
+              end
+
+              return ask_llm(context)
             end
-
-            if Rails.env.development?
-              Rails.logger.debug(
-                "AssistantService | entity=#{matched_entity&.name || 'none'} " \
-                "context_length=#{context.length} logs=#{selected_logs.count} " \
-                "truncated=#{context_truncated}"
-              )
-            end
-
-            return ask_llm(context)
           end
-        end
 
-        scope = scope.where(
-          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
-          range_start,
-          range_end
-        )
+          scope = scope.where(
+            "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+            range_start,
+            range_end
+          )
+        end
       end
     else
       if lowered.include?("today")
