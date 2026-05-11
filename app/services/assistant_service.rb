@@ -243,7 +243,6 @@ class AssistantService
 
     summary = response.dig("choices", 0, "message", "content")
     summary.presence || log
-
   rescue StandardError => e
     Rails.logger.warn(
       "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
