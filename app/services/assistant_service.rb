@@ -99,6 +99,8 @@ class AssistantService
                 context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
               end
 
+              context = context.first(MAX_RANGE_CONTEXT_LENGTH)
+
               if Rails.env.development?
                 Rails.logger.debug(
                   "AssistantService | entity=#{matched_entity&.name || 'none'} " \
