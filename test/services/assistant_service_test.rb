@@ -264,6 +264,10 @@ class AssistantServiceTest < ActiveSupport::TestCase
       service = AssistantService.new("What did I do with #{entity.name} this week?")
       captured_context = nil
 
+      service.define_singleton_method(:summarize_daily_log) do |log|
+        log
+      end
+
       service.define_singleton_method(:ask_llm) do |context|
         captured_context = context
         "stubbed response"
