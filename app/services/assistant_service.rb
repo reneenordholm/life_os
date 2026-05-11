@@ -79,18 +79,25 @@ class AssistantService
 
           if selected_logs.any?
             daily_summaries = []
+            summary_context_length = 0
             context_truncated = selected_logs.count < daily_logs.count
 
             selected_logs.each do |daily_log|
               summary = summarize_daily_log(daily_log)
-              projected_context = (daily_summaries + [ summary ]).join(separator)
+              separator_length = daily_summaries.empty? ? 0 : separator.length
 
-              if projected_context.length > MAX_RANGE_CONTEXT_LENGTH
+              projected_length =
+                summary_context_length +
+                summary.length +
+                separator_length
+
+              if projected_length > MAX_RANGE_CONTEXT_LENGTH
                 context_truncated = true
                 break
               end
 
               daily_summaries << summary
+              summary_context_length = projected_length
             end
 
             if daily_summaries.any?
