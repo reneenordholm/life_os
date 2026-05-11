@@ -82,7 +82,7 @@ class AssistantService
 
             selected_logs.each do |daily_log|
               summary = summarize_daily_log(daily_log)
-              projected_context = (daily_summaries + [summary]).join(separator)
+              projected_context = (daily_summaries + [ summary ]).join(separator)
 
               if projected_context.length > MAX_RANGE_CONTEXT_LENGTH
                 context_truncated = true
