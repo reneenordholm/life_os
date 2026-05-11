@@ -1,5 +1,6 @@
 class AssistantService
   MAX_RANGE_CONTEXT_LENGTH = 12_000
+  LLM_MODEL = "gpt-4o-mini"
 
   def initialize(question)
     @question = question
@@ -213,7 +214,7 @@ class AssistantService
   def summarize_daily_log(log)
     response = EmbeddingService.client.chat(
       parameters: {
-        model: "gpt-4o-mini",
+        model: LLM_MODEL,
         messages: [
           {
             role: "system",
@@ -296,7 +297,7 @@ class AssistantService
 
     response = EmbeddingService.client.chat(
       parameters: {
-        model: "gpt-4o-mini",
+        model: LLM_MODEL,
         messages: [
           {
             role: "system",
