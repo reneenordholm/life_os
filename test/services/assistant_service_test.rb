@@ -66,15 +66,19 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
       service = AssistantService.new("What did I do this week?")
       parsed_time = TimeParser.parse("What did I do this week?")
-      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
 
-      assert_equal 2, logs.count
+      logs = service.send(
+        :retrieve_daily_logs_for_range,
+        parsed_time[:value],
+      ).to_a
 
-      assert_match(/2026-05-03/, logs.first)
-      assert_match(/2026-05-05/, logs.second)
+      assert_equal 2, logs.length
 
-      assert_includes logs.first, "Sunday log content"
-      assert_includes logs.second, "Tuesday log content"
+      assert_equal "2026-05-03", logs.first.metadata["date"]
+      assert_equal "2026-05-05", logs.second.metadata["date"]
+
+      assert_equal "Sunday log content", logs.first.content
+      assert_equal "Tuesday log content", logs.second.content
     end
   end
 
@@ -104,15 +108,17 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
       service = AssistantService.new("What did I do last week?")
       parsed_time = TimeParser.parse("What did I do last week?")
-      logs = service.send(:retrieve_daily_logs_for_range, parsed_time[:value])
 
-      assert_equal 2, logs.count
+      logs = service.send(
+        :retrieve_daily_logs_for_range,
+        parsed_time[:value],
+      ).to_a
 
-      assert_match(/2026-04-27/, logs.first)
-      assert_match(/2026-04-29/, logs.second)
-
-      assert_includes logs.first, "Monday last week content"
-      assert_includes logs.second, "Wednesday last week content"
+      assert_equal 2, logs.length
+      assert_equal "2026-04-27", logs.first.metadata["date"]
+      assert_equal "Monday last week content", logs.first.content
+      assert_equal "2026-04-29", logs.second.metadata["date"]
+      assert_equal "Wednesday last week content", logs.second.content
     end
   end
 
@@ -186,7 +192,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
       logs.each do |log|
         projected_length =
           context_length +
-          log.length +
+          log.content.to_s.length +
           (selected_logs.empty? ? 0 : separator.length)
 
         break if projected_length > AssistantService::MAX_RANGE_CONTEXT_LENGTH
@@ -230,11 +236,11 @@ class AssistantServiceTest < ActiveSupport::TestCase
         :retrieve_daily_logs_for_range,
         parsed_time[:value],
         entity: entity
-      )
+      ).to_a
 
-      assert_equal 1, logs.count
-      assert_includes logs.first, "Mom"
-      assert_not_includes logs.first, "Worked all day"
+      assert_equal 1, logs.length
+      assert_includes logs.first.content, "Mom"
+      assert_not_includes logs.first.content, "Worked all day"
     end
   end
 
@@ -282,7 +288,13 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
   test "summarize_daily_log falls back to original log when response is blank" do
     service = AssistantService.new("What did I do this week?")
-    log = "Original daily log content"
+    document = create_document!(
+      title: "Summary Fallback Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content"
+    )
+
 
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
@@ -295,14 +307,19 @@ class AssistantServiceTest < ActiveSupport::TestCase
       fake_client
     end
 
-    assert_equal log, service.send(:summarize_daily_log, log)
+    assert_equal document.content, service.send(:summarize_daily_log, document)
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
   test "summarize_daily_log falls back to original log when client raises" do
     service = AssistantService.new("What did I do this week?")
-    log = "Original daily log content"
+    document = create_document!(
+      title: "Summary Fallback Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content"
+    )
 
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
@@ -315,7 +332,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
       fake_client
     end
 
-    assert_equal log, service.send(:summarize_daily_log, log)
+    assert_equal document.content, service.send(:summarize_daily_log, document)
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end

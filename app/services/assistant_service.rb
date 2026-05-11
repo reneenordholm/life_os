@@ -59,31 +59,31 @@ class AssistantService
           daily_logs = retrieve_daily_logs_for_range(
             parsed_time[:value],
             entity: matched_entity
-          )
+          ).to_a
 
-          selected_logs = []
+          selected_documents = []
           context_length = 0
           separator = "\n\n---\n\n"
 
-          daily_logs.each do |daily_log|
+          daily_logs.each do |document|
             projected_length =
               context_length +
-              daily_log.length +
-              (selected_logs.empty? ? 0 : separator.length)
+              document.content.to_s.length +
+              (selected_documents.empty? ? 0 : separator.length)
 
             break if projected_length > MAX_RANGE_CONTEXT_LENGTH
 
-            selected_logs << daily_log
+            selected_documents << document
             context_length = projected_length
           end
 
-          if selected_logs.any?
+          if selected_documents.any?
             daily_summaries = []
             summary_context_length = 0
-            context_truncated = selected_logs.count < daily_logs.count
+            context_truncated = selected_documents.count < daily_logs.count
 
-            selected_logs.each do |daily_log|
-              summary = summarize_daily_log(daily_log)
+            selected_documents.each do |document|
+              summary = summarize_daily_log(document)
               separator_length = daily_summaries.empty? ? 0 : separator.length
 
               projected_length =
@@ -208,20 +208,14 @@ class AssistantService
         .group("documents.id")
     end
 
-    scope
-      .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
-      .map do |document|
-        <<~TEXT
-          Source: #{document.title}
-          Document type: #{document.doc_type}
-          Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
-
-          #{document.content}
-        TEXT
-      end
+    scope.order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
   end
 
-  def summarize_daily_log(log)
+  def summarize_daily_log(document)
+    return document.summary if document.summary.present?
+
+    log = document.content
+
     response = EmbeddingService.client.chat(
       parameters: {
         model: LLM_MODEL,
@@ -253,12 +247,16 @@ class AssistantService
     )
 
     summary = response.dig("choices", 0, "message", "content")
-    summary.presence || log
+    summary = summary.presence || log
+
+    document.update!(summary: summary)
+
+    summary
+
   rescue StandardError => e
     Rails.logger.warn(
       "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     )
-
     log
   end
 
