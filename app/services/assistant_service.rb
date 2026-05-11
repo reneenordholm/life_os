@@ -243,7 +243,10 @@ class AssistantService
     summary.presence || log
 
   rescue StandardError => e
-    Rails.logger.warn("Summarization failed: #{e.message}") if Rails.env.development?
+    Rails.logger.warn(
+      "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+    )
+
     log
   end
 
