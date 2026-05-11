@@ -104,10 +104,13 @@ class AssistantService
               context = daily_summaries.join(separator)
 
               if context_truncated
-                context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
-              end
+                truncation_note =
+                  "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
 
-              context = context[0, MAX_RANGE_CONTEXT_LENGTH]
+                if context.length + truncation_note.length <= MAX_RANGE_CONTEXT_LENGTH
+                  context += truncation_note
+                end
+              end
 
               if Rails.env.development?
                 Rails.logger.debug(
