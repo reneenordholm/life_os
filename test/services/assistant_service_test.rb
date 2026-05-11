@@ -275,7 +275,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
       assert_equal "stubbed response", service.call
       assert_includes captured_context, "Summarized Mom log"
-      assert_not_includes captured_context, "Spent time with Mom"
+      assert_not_includes captured_context, mom_log.content
       assert_not_includes captured_context, "Worked all day"
     end
   end
