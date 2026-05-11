@@ -110,13 +110,13 @@ class AssistantService
               return ask_llm(context)
             end
           end
-
-          scope = scope.where(
-            "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
-            range_start,
-            range_end
-          )
         end
+
+        scope = scope.where(
+          "CAST(documents.metadata ->> 'date' AS date) BETWEEN ? AND ?",
+          range_start,
+          range_end
+        )
       end
     else
       if lowered.include?("today")
