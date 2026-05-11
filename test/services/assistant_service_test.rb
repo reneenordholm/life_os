@@ -264,14 +264,59 @@ class AssistantServiceTest < ActiveSupport::TestCase
       service = AssistantService.new("What did I do with #{entity.name} this week?")
       captured_context = nil
 
+      service.define_singleton_method(:summarize_daily_log) do |_log|
+        "Summarized Mom log"
+      end
+
       service.define_singleton_method(:ask_llm) do |context|
         captured_context = context
         "stubbed response"
       end
 
       assert_equal "stubbed response", service.call
-      assert_includes captured_context, "Spent time with #{entity.name}"
+      assert_includes captured_context, "Summarized Mom log"
+      assert_not_includes captured_context, mom_log.content
       assert_not_includes captured_context, "Worked all day"
     end
+  end
+
+  test "summarize_daily_log falls back to original log when response is blank" do
+    service = AssistantService.new("What did I do this week?")
+    log = "Original daily log content"
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      { "choices" => [ { "message" => { "content" => nil } } ] }
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+
+    EmbeddingService.define_singleton_method(:client) do
+      fake_client
+    end
+
+    assert_equal log, service.send(:summarize_daily_log, log)
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
+  end
+
+  test "summarize_daily_log falls back to original log when client raises" do
+    service = AssistantService.new("What did I do this week?")
+    log = "Original daily log content"
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      raise StandardError, "OpenAI unavailable"
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+
+    EmbeddingService.define_singleton_method(:client) do
+      fake_client
+    end
+
+    assert_equal log, service.send(:summarize_daily_log, log)
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 end

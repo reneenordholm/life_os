@@ -1,5 +1,6 @@
 class AssistantService
   MAX_RANGE_CONTEXT_LENGTH = 12_000
+  LLM_MODEL = "gpt-4o-mini"
 
   def initialize(question)
     @question = question
@@ -77,22 +78,50 @@ class AssistantService
           end
 
           if selected_logs.any?
+            daily_summaries = []
+            summary_context_length = 0
             context_truncated = selected_logs.count < daily_logs.count
-            context = selected_logs.join(separator)
 
-            if context_truncated
-              context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+            selected_logs.each do |daily_log|
+              summary = summarize_daily_log(daily_log)
+              separator_length = daily_summaries.empty? ? 0 : separator.length
+
+              projected_length =
+                summary_context_length +
+                summary.length +
+                separator_length
+
+              if projected_length > MAX_RANGE_CONTEXT_LENGTH
+                context_truncated = true
+                break
+              end
+
+              daily_summaries << summary
+              summary_context_length = projected_length
             end
 
-            if Rails.env.development?
-              Rails.logger.debug(
-                "AssistantService | entity=#{matched_entity&.name || 'none'} " \
-                "context_length=#{context.length} logs=#{selected_logs.count} " \
-                "truncated=#{context_truncated}"
-              )
-            end
+            if daily_summaries.any?
+              context = daily_summaries.join(separator)
 
-            return ask_llm(context)
+              if context_truncated
+                truncation_note =
+                  "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
+
+                if context.length + truncation_note.length <= MAX_RANGE_CONTEXT_LENGTH
+                  context += truncation_note
+                end
+              end
+
+              if Rails.env.development?
+                Rails.logger.debug(
+                  "AssistantService | entity=#{matched_entity&.name || 'none'} " \
+                  "context_length=#{context.length} logs=#{daily_summaries.count} " \
+                  "truncated=#{context_truncated}"
+                )
+              end
+
+              return ask_llm(context)
+            end
           end
         end
 
@@ -192,6 +221,47 @@ class AssistantService
       end
   end
 
+  def summarize_daily_log(log)
+    response = EmbeddingService.client.chat(
+      parameters: {
+        model: LLM_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: <<~SYSTEM
+              Summarize this daily log into concise bullets.
+
+              Preserve:
+              - date
+              - work
+              - activities
+              - projects
+              - meals
+              - notes
+
+              Omit categories that are not present.
+
+              Use only the provided log.
+            SYSTEM
+          },
+          {
+            role: "user",
+            content: log
+          }
+        ]
+      }
+    )
+
+    summary = response.dig("choices", 0, "message", "content")
+    summary.presence || log
+  rescue StandardError => e
+    Rails.logger.warn(
+      "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
+    )
+
+    log
+  end
+
   def retrieve_chunks(scope, embedding)
     scope
       .includes(:document)
@@ -237,7 +307,7 @@ class AssistantService
 
     response = EmbeddingService.client.chat(
       parameters: {
-        model: "gpt-4o-mini",
+        model: LLM_MODEL,
         messages: [
           {
             role: "system",
