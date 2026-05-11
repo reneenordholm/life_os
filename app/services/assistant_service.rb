@@ -226,6 +226,8 @@ class AssistantService
               - meals
               - notes
 
+              Omit categories that are not present.
+
               Use only the provided log.
             SYSTEM
           },
@@ -237,7 +239,12 @@ class AssistantService
       }
     )
 
-    response.dig("choices", 0, "message", "content")
+    summary = response.dig("choices", 0, "message", "content")
+    summary.presence || log
+
+  rescue StandardError => e
+    Rails.logger.warn("Summarization failed: #{e.message}") if Rails.env.development?
+    log
   end
 
   def retrieve_chunks(scope, embedding)
