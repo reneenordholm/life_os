@@ -279,4 +279,24 @@ class AssistantServiceTest < ActiveSupport::TestCase
       assert_not_includes captured_context, "Worked all day"
     end
   end
+
+  test "summarize_daily_log falls back to original log when response is blank" do
+    service = AssistantService.new("What did I do this week?")
+    log = "Original daily log content"
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      { "choices" => [ { "message" => { "content" => nil } } ] }
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+
+    EmbeddingService.define_singleton_method(:client) do
+      fake_client
+    end
+
+    assert_equal log, service.send(:summarize_daily_log, log)
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
+  end
 end
