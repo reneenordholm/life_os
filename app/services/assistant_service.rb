@@ -78,7 +78,12 @@ class AssistantService
 
           if selected_logs.any?
             context_truncated = selected_logs.count < daily_logs.count
-            context = selected_logs.join(separator)
+
+            daily_summaries = selected_logs.map do |daily_log|
+              summarize_daily_log(daily_log)
+            end
+
+            context = daily_summaries.join(separator)
 
             if context_truncated
               context += "\n\n---\n\nNote: Additional daily logs existed in this date range but were omitted due to context length limits."
@@ -190,6 +195,38 @@ class AssistantService
           #{document.content}
         TEXT
       end
+  end
+
+  def summarize_daily_log(log)
+    response = EmbeddingService.client.chat(
+      parameters: {
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: <<~SYSTEM
+              Summarize this daily log into concise bullets.
+
+              Preserve:
+              - date
+              - work
+              - activities
+              - projects
+              - meals
+              - notes
+
+              Use only the provided log.
+            SYSTEM
+          },
+          {
+            role: "user",
+            content: log
+          }
+        ]
+      }
+    )
+
+    response.dig("choices", 0, "message", "content")
   end
 
   def retrieve_chunks(scope, embedding)
