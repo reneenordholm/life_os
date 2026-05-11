@@ -264,8 +264,8 @@ class AssistantServiceTest < ActiveSupport::TestCase
       service = AssistantService.new("What did I do with #{entity.name} this week?")
       captured_context = nil
 
-      service.define_singleton_method(:summarize_daily_log) do |log|
-        log
+      service.define_singleton_method(:summarize_daily_log) do |_log|
+        "Summarized Mom log"
       end
 
       service.define_singleton_method(:ask_llm) do |context|
@@ -274,7 +274,8 @@ class AssistantServiceTest < ActiveSupport::TestCase
       end
 
       assert_equal "stubbed response", service.call
-      assert_includes captured_context, "Spent time with Mom"
+      assert_includes captured_context, "Summarized Mom log"
+      assert_not_includes captured_context, "Spent time with Mom"
       assert_not_includes captured_context, "Worked all day"
     end
   end
