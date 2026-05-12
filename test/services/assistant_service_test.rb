@@ -336,4 +336,45 @@ class AssistantServiceTest < ActiveSupport::TestCase
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
+
+  test "summarize_daily_log persists generated summary" do
+    document = create_document!(
+      title: "Summary Cache Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content"
+    )
+
+    service = AssistantService.new("What did I do this week?")
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      { "choices" => [ { "message" => { "content" => "Cached daily summary" } } ] }
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+    EmbeddingService.define_singleton_method(:client) { fake_client }
+
+    assert_equal "Cached daily summary", service.send(:summarize_daily_log, document)
+
+    document.reload
+    assert_equal "Cached daily summary", document.summary
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
+  end
+
+  test "document clears cached summary when content changes" do
+    document = create_document!(
+      title: "Summary Invalidation Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content",
+      summary: "Old cached summary"
+    )
+
+    document.update!(content: "Updated daily log content")
+    document.reload
+
+    assert_nil document.summary
+  end
 end
