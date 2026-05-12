@@ -66,9 +66,11 @@ class AssistantService
           separator = "\n\n---\n\n"
 
           daily_logs.each do |document|
+            estimated_length = (document.summary.presence || document.content).to_s.length
+
             projected_length =
               context_length +
-              document.content.to_s.length +
+              estimated_length +
               (selected_documents.empty? ? 0 : separator.length)
 
             break if projected_length > MAX_RANGE_CONTEXT_LENGTH
