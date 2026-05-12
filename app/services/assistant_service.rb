@@ -249,11 +249,13 @@ class AssistantService
     )
 
     summary = response.dig("choices", 0, "message", "content")
-    summary = summary.presence || log
 
-    document.update!(summary: summary)
-
-    summary
+    if summary.present?
+      document.update!(summary: summary)
+      summary
+    else
+      log
+    end
 
   rescue StandardError => e
     Rails.logger.warn(
