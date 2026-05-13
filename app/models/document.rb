@@ -4,7 +4,7 @@ class Document < ApplicationRecord
   has_many :entities, through: :document_entities
 
   after_commit :ingest_if_needed, on: [ :create, :update ]
-  before_save :clear_summary_if_content_changed
+  before_update :clear_summary_if_content_changed
 
   private
 
