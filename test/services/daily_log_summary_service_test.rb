@@ -15,14 +15,20 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
     document
   end
 
+  def with_stubbed_llm_client(fake_client)
+    original_client_method = EmbeddingService.method(:client)
+    EmbeddingService.define_singleton_method(:client) { fake_client }
+
+    yield
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
+  end
+
   test "persists generated summary" do
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
       { "choices" => [ { "message" => { "content" => "Cached daily summary" } } ] }
     end
-
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
 
     document = create_document!(
       title: "Summary Cache Test",
@@ -31,12 +37,12 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       content: "Original daily log content"
     )
 
-    DailyLogSummaryService.call(document)
+    with_stubbed_llm_client(fake_client) do
+      DailyLogSummaryService.call(document)
+    end
 
     document.reload
     assert_equal "Cached daily summary", document.summary
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
   test "reuses cached summary without calling LLM" do
@@ -48,20 +54,16 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       summary: "Existing cached summary"
     )
 
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      raise "LLM should not be called"
+    fake_client = Object.new.tap do |c|
+      c.define_singleton_method(:chat) { raise "LLM should not be called" }
     end
 
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
-    DailyLogSummaryService.call(document)
+    with_stubbed_llm_client(fake_client) do
+      DailyLogSummaryService.call(document)
+    end
 
     document.reload
     assert_equal "Existing cached summary", document.summary
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
   test "daily_log gets summary when summary service runs" do
@@ -70,9 +72,6 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       { "choices" => [ { "message" => { "content" => "Generated summary" } } ] }
     end
 
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
     document = create_document!(
       title: "Daily Log Ingestion Test",
       doc_type: "daily_log",
@@ -80,12 +79,12 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       content: "Did some stuff"
     )
 
-    DailyLogSummaryService.call(document)
+    with_stubbed_llm_client(fake_client) do
+      DailyLogSummaryService.call(document)
+    end
 
     document.reload
     assert_equal "Generated summary", document.summary
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
   test "non-daily_log does not generate summary when summary service runs" do
@@ -94,9 +93,6 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       raise "LLM should not be called"
     end
 
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
     document = create_document!(
       title: "Recipe Test",
       doc_type: "recipe",
@@ -104,11 +100,11 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       content: "Some recipe content"
     )
 
-    DailyLogSummaryService.call(document)
+    with_stubbed_llm_client(fake_client) do
+      DailyLogSummaryService.call(document)
+    end
 
     document.reload
     assert_nil document.summary
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 end
