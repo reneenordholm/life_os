@@ -307,7 +307,11 @@ class AssistantServiceTest < ActiveSupport::TestCase
       fake_client
     end
 
-    assert_equal document.content, service.send(:summarize_daily_log, document)
+    result = service.send(:summarize_daily_log, document)
+
+    assert_includes result, document.content
+    assert_includes result, "Source: #{document.title}"
+    assert_includes result, "\"date\":\"2026-05-05\""
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
@@ -332,7 +336,11 @@ class AssistantServiceTest < ActiveSupport::TestCase
       fake_client
     end
 
-    assert_equal document.content, service.send(:summarize_daily_log, document)
+    result = service.send(:summarize_daily_log, document)
+
+    assert_includes result, document.content
+    assert_includes result, "Source: #{document.title}"
+    assert_includes result, "\"date\":\"2026-05-05\""
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end

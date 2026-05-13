@@ -216,7 +216,12 @@ class AssistantService
   def summarize_daily_log(document)
     return document.summary if document.summary.present?
 
-    log = document.content
+    log = <<~LOG
+      Source: #{document.title}
+      Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+      #{document.content}
+    LOG
 
     response = EmbeddingService.client.chat(
       parameters: {
