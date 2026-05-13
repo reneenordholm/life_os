@@ -56,7 +56,7 @@ class AssistantService
         range_end = parsed_time[:value].end
 
         if !structured_filter_applied
-          daily_logs = retrieve_daily_logs_for_range(
+          daily_log_documents = retrieve_daily_logs_for_range(
             parsed_time[:value],
             entity: matched_entity
           ).to_a
@@ -65,7 +65,7 @@ class AssistantService
           context_length = 0
           separator = "\n\n---\n\n"
 
-          daily_logs.each do |document|
+          daily_log_documents.each do |document|
             estimated_length = (document.summary.presence || document.content).to_s.length
 
             projected_length =
@@ -79,10 +79,12 @@ class AssistantService
             context_length = projected_length
           end
 
+          context_truncated = selected_documents.count < daily_log_documents.count
+
           if selected_documents.any?
             daily_summaries = []
             summary_context_length = 0
-            context_truncated = selected_documents.count < daily_logs.count
+            context_truncated = selected_documents.count < daily_log_documents.count
 
             selected_documents.each do |document|
               summary = summarize_daily_log(document)
