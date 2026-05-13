@@ -31,6 +31,8 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       content: "Original daily log content"
     )
 
+    DailyLogSummaryService.call(document)
+
     document.reload
     assert_equal "Cached daily summary", document.summary
   ensure
@@ -62,7 +64,7 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
-  test "daily_log gets summary on ingestion" do
+  test "daily_log gets summary when summary service runs" do
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
       { "choices" => [ { "message" => { "content" => "Generated summary" } } ] }
@@ -78,13 +80,15 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       content: "Did some stuff"
     )
 
+    DailyLogSummaryService.call(document)
+
     document.reload
     assert_equal "Generated summary", document.summary
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
-  test "non-daily_log does not generate summary on ingestion" do
+  test "non-daily_log does not generate summary when summary service runs" do
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
       raise "LLM should not be called"
@@ -99,6 +103,8 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       metadata: {},
       content: "Some recipe content"
     )
+
+    DailyLogSummaryService.call(document)
 
     document.reload
     assert_nil document.summary
