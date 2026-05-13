@@ -286,7 +286,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "document regenerates summary when content changes" do
+  test "document clears summary when content changes" do
     document = create_document!(
       title: "Summary Update Test",
       doc_type: "daily_log",
@@ -297,14 +297,10 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
     original_call_method = DailyLogSummaryService.method(:call)
 
-    DailyLogSummaryService.define_singleton_method(:call) do |doc|
-      doc.update!(summary: "New generated summary")
-    end
-
     document.update!(content: "Updated content")
     document.reload
 
-    assert_equal "New generated summary", document.summary
+    assert_nil document.summary
   ensure
     DailyLogSummaryService.define_singleton_method(:call, original_call_method)
   end
