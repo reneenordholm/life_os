@@ -29,6 +29,7 @@ class DocumentIngestionService
       end
 
       EntityExtractionService.new(@document).call
+      DailyLogSummaryService.call(@document)
     end
   end
 end
