@@ -287,27 +287,26 @@ class AssistantServiceTest < ActiveSupport::TestCase
   end
 
   test "document regenerates summary when content changes" do
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      { "choices" => [ { "message" => { "content" => "New generated summary" } } ] }
-    end
-
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
     document = create_document!(
       title: "Summary Update Test",
       doc_type: "daily_log",
       metadata: { date: "2026-05-05" },
-      content: "Original content"
+      content: "Original content",
+      summary: "Old cached summary"
     )
 
-    document.update!(content: "Updated content")
+    original_call_method = DailyLogSummaryService.method(:call)
 
+    DailyLogSummaryService.define_singleton_method(:call) do |doc|
+      doc.update!(summary: "New generated summary")
+    end
+
+    document.update!(content: "Updated content")
     document.reload
+
     assert_equal "New generated summary", document.summary
   ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
+    DailyLogSummaryService.define_singleton_method(:call, original_call_method)
   end
 
   test "summarize_daily_log falls back to formatted document content when summary is blank" do
