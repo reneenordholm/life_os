@@ -12,6 +12,7 @@ class DailyLogSummaryService
   def call
     return unless @document.doc_type == "daily_log"
     return if @document.content.blank?
+    return if @document.summary.present?
 
     summary = generate_summary
     @document.update!(summary: summary) if summary.present?

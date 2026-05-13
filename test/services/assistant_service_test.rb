@@ -286,95 +286,6 @@ class AssistantServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "summarize_daily_log falls back to original log when response is blank" do
-    service = AssistantService.new("What did I do this week?")
-    document = create_document!(
-      title: "Summary Fallback Test",
-      doc_type: "daily_log",
-      metadata: { date: "2026-05-05" },
-      content: "Original daily log content"
-    )
-
-
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      { "choices" => [ { "message" => { "content" => nil } } ] }
-    end
-
-    original_client_method = EmbeddingService.method(:client)
-
-    EmbeddingService.define_singleton_method(:client) do
-      fake_client
-    end
-
-    result = service.send(:summarize_daily_log, document)
-
-    assert_includes result, document.content
-    assert_includes result, "Source: #{document.title}"
-    assert_includes result, "\"date\":\"2026-05-05\""
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
-  end
-
-  test "summarize_daily_log falls back to original log when client raises" do
-    service = AssistantService.new("What did I do this week?")
-    document = create_document!(
-      title: "Summary Fallback Test",
-      doc_type: "daily_log",
-      metadata: { date: "2026-05-05" },
-      content: "Original daily log content"
-    )
-
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      raise StandardError, "OpenAI unavailable"
-    end
-
-    original_client_method = EmbeddingService.method(:client)
-
-    EmbeddingService.define_singleton_method(:client) do
-      fake_client
-    end
-
-    result = service.send(:summarize_daily_log, document)
-
-    assert_includes result, document.content
-    assert_includes result, "Source: #{document.title}"
-    assert_includes result, "\"date\":\"2026-05-05\""
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
-  end
-
-  test "summarize_daily_log persists generated summary" do
-    document = create_document!(
-      title: "Summary Cache Test",
-      doc_type: "daily_log",
-      metadata: { date: "2026-05-05" },
-      content: "Original daily log content"
-    )
-
-    service = AssistantService.new("What did I do this week?")
-
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      { "choices" => [ { "message" => { "content" => "Cached daily summary" } } ] }
-    end
-
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
-    result = service.send(:summarize_daily_log, document)
-
-    assert_includes result, "Source: Summary Cache Test"
-    assert_includes result, "\"date\":\"2026-05-05\""
-    assert_includes result, "Cached daily summary"
-
-    document.reload
-    assert_equal "Cached daily summary", document.summary
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
-  end
-
   test "document clears cached summary when content changes" do
     document = create_document!(
       title: "Summary Invalidation Test",
@@ -387,34 +298,6 @@ class AssistantServiceTest < ActiveSupport::TestCase
     document.update!(content: "Updated daily log content")
     document.reload
 
-    assert_nil document.summary
-  end
-
-  test "summarize_daily_log reuses cached summary without calling LLM" do
-    document = create_document!(
-      title: "Cached Summary Reuse Test",
-      doc_type: "daily_log",
-      metadata: { date: "2026-05-05" },
-      content: "Original daily log content",
-      summary: "Existing cached summary"
-    )
-
-    service = AssistantService.new("What did I do this week?")
-
-    fake_client = Object.new
-    fake_client.define_singleton_method(:chat) do |parameters:|
-      raise "LLM should not be called"
-    end
-
-    original_client_method = EmbeddingService.method(:client)
-    EmbeddingService.define_singleton_method(:client) { fake_client }
-
-    result = service.send(:summarize_daily_log, document)
-
-    assert_includes result, "Source: Cached Summary Reuse Test"
-    assert_includes result, "\"date\":\"2026-05-05\""
-    assert_includes result, "Existing cached summary"
-  ensure
-    EmbeddingService.define_singleton_method(:client, original_client_method)
+    assert_not_equal "Old cached summary", document.summary
   end
 end

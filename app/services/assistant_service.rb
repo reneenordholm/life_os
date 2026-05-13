@@ -214,11 +214,6 @@ class AssistantService
   end
 
   def summarize_daily_log(document)
-    return format_daily_summary(document, document.summary) if document.summary.present?
-
-    DailyLogSummaryService.call(document)
-    document.reload
-
     if document.summary.present?
       format_daily_summary(document, document.summary)
     else
