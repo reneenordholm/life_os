@@ -363,7 +363,11 @@ class AssistantServiceTest < ActiveSupport::TestCase
     original_client_method = EmbeddingService.method(:client)
     EmbeddingService.define_singleton_method(:client) { fake_client }
 
-    assert_equal "Cached daily summary", service.send(:summarize_daily_log, document)
+    result = service.send(:summarize_daily_log, document)
+
+    assert_includes result, "Source: Summary Cache Test"
+    assert_includes result, "\"date\":\"2026-05-05\""
+    assert_includes result, "Cached daily summary"
 
     document.reload
     assert_equal "Cached daily summary", document.summary

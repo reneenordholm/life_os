@@ -214,7 +214,7 @@ class AssistantService
   end
 
   def summarize_daily_log(document)
-    return document.summary if document.summary.present?
+    return format_daily_summary(document, document.summary) if document.summary.present?
 
     log = <<~LOG
       Source: #{document.title}
@@ -257,16 +257,25 @@ class AssistantService
 
     if summary.present?
       document.update!(summary: summary)
-      summary
+      format_daily_summary(document, summary)
     else
       log
     end
-
   rescue StandardError => e
     Rails.logger.warn(
       "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     )
+
     log
+  end
+
+  def format_daily_summary(document, summary)
+    <<~TEXT
+      Source: #{document.title}
+      Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+      #{summary}
+    TEXT
   end
 
   def retrieve_chunks(scope, embedding)
