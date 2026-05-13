@@ -295,14 +295,10 @@ class AssistantServiceTest < ActiveSupport::TestCase
       summary: "Old cached summary"
     )
 
-    original_call_method = DailyLogSummaryService.method(:call)
-
     document.update!(content: "Updated content")
     document.reload
 
     assert_nil document.summary
-  ensure
-    DailyLogSummaryService.define_singleton_method(:call, original_call_method)
   end
 
   test "summarize_daily_log falls back to formatted document content when summary is blank" do
