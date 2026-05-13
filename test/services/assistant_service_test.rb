@@ -286,18 +286,27 @@ class AssistantServiceTest < ActiveSupport::TestCase
     end
   end
 
-  test "document clears cached summary when content changes" do
+  test "document regenerates summary when content changes" do
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      { "choices" => [ { "message" => { "content" => "New generated summary" } } ] }
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+    EmbeddingService.define_singleton_method(:client) { fake_client }
+
     document = create_document!(
-      title: "Summary Invalidation Test",
+      title: "Summary Update Test",
       doc_type: "daily_log",
       metadata: { date: "2026-05-05" },
-      content: "Original daily log content",
-      summary: "Old cached summary"
+      content: "Original content"
     )
 
-    document.update!(content: "Updated daily log content")
-    document.reload
+    document.update!(content: "Updated content")
 
-    assert_not_equal "Old cached summary", document.summary
+    document.reload
+    assert_equal "New generated summary", document.summary
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 end
