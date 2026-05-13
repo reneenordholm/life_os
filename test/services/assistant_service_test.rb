@@ -389,4 +389,32 @@ class AssistantServiceTest < ActiveSupport::TestCase
 
     assert_nil document.summary
   end
+
+  test "summarize_daily_log reuses cached summary without calling LLM" do
+    document = create_document!(
+      title: "Cached Summary Reuse Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content",
+      summary: "Existing cached summary"
+    )
+
+    service = AssistantService.new("What did I do this week?")
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      raise "LLM should not be called"
+    end
+
+    original_client_method = EmbeddingService.method(:client)
+    EmbeddingService.define_singleton_method(:client) { fake_client }
+
+    result = service.send(:summarize_daily_log, document)
+
+    assert_includes result, "Source: Cached Summary Reuse Test"
+    assert_includes result, "\"date\":\"2026-05-05\""
+    assert_includes result, "Existing cached summary"
+  ensure
+    EmbeddingService.define_singleton_method(:client, original_client_method)
+  end
 end
