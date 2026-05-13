@@ -309,4 +309,23 @@ class AssistantServiceTest < ActiveSupport::TestCase
   ensure
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
+
+  test "summarize_daily_log falls back to formatted document content when summary is blank" do
+    document = create_document!(
+      title: "Summary Fallback Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original daily log content"
+    )
+
+    # Simulate missing summary after failed/ skipped summarization
+    document.update_column(:summary, nil)
+
+    service = AssistantService.new("What did I do this week?")
+    result = service.send(:summarize_daily_log, document)
+
+    assert_includes result, "Source: Summary Fallback Test"
+    assert_includes result, "\"date\":\"2026-05-05\""
+    assert_includes result, "Original daily log content"
+  end
 end
