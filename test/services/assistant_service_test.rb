@@ -309,9 +309,7 @@ class AssistantServiceTest < ActiveSupport::TestCase
       content: "Original daily log content"
     )
 
-    # Simulate missing summary after failed/ skipped summarization
-    document.update_column(:summary, nil)
-
+    # The document is intentionally created without a summary to exercise the fallback path.
     service = AssistantService.new("What did I do this week?")
     result = service.send(:summarize_daily_log, document)
 
