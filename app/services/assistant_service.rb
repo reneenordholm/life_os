@@ -79,8 +79,6 @@ class AssistantService
             context_length = projected_length
           end
 
-          context_truncated = selected_documents.count < daily_log_documents.count
-
           if selected_documents.any?
             daily_summaries = []
             summary_context_length = 0
