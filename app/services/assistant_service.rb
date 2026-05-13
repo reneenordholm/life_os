@@ -56,34 +56,36 @@ class AssistantService
         range_end = parsed_time[:value].end
 
         if !structured_filter_applied
-          daily_logs = retrieve_daily_logs_for_range(
+          daily_log_documents = retrieve_daily_logs_for_range(
             parsed_time[:value],
             entity: matched_entity
-          )
+          ).to_a
 
-          selected_logs = []
+          selected_documents = []
           context_length = 0
           separator = "\n\n---\n\n"
 
-          daily_logs.each do |daily_log|
+          daily_log_documents.each do |document|
+            estimated_length = (document.summary.presence || document.content).to_s.length
+
             projected_length =
               context_length +
-              daily_log.length +
-              (selected_logs.empty? ? 0 : separator.length)
+              estimated_length +
+              (selected_documents.empty? ? 0 : separator.length)
 
             break if projected_length > MAX_RANGE_CONTEXT_LENGTH
 
-            selected_logs << daily_log
+            selected_documents << document
             context_length = projected_length
           end
 
-          if selected_logs.any?
+          if selected_documents.any?
             daily_summaries = []
             summary_context_length = 0
-            context_truncated = selected_logs.count < daily_logs.count
+            context_truncated = selected_documents.count < daily_log_documents.count
 
-            selected_logs.each do |daily_log|
-              summary = summarize_daily_log(daily_log)
+            selected_documents.each do |document|
+              summary = summarize_daily_log(document)
               separator_length = daily_summaries.empty? ? 0 : separator.length
 
               projected_length =
@@ -208,20 +210,19 @@ class AssistantService
         .group("documents.id")
     end
 
-    scope
-      .order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
-      .map do |document|
-        <<~TEXT
-          Source: #{document.title}
-          Document type: #{document.doc_type}
-          Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
-
-          #{document.content}
-        TEXT
-      end
+    scope.order(Arel.sql("CAST(metadata ->> 'date' AS date) ASC"))
   end
 
-  def summarize_daily_log(log)
+  def summarize_daily_log(document)
+    return format_daily_summary(document, document.summary) if document.summary.present?
+
+    log = <<~LOG
+      Source: #{document.title}
+      Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+      #{document.content}
+    LOG
+
     response = EmbeddingService.client.chat(
       parameters: {
         model: LLM_MODEL,
@@ -253,13 +254,28 @@ class AssistantService
     )
 
     summary = response.dig("choices", 0, "message", "content")
-    summary.presence || log
+
+    if summary.present?
+      document.update!(summary: summary)
+      format_daily_summary(document, summary)
+    else
+      log
+    end
   rescue StandardError => e
     Rails.logger.warn(
       "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
     )
 
     log
+  end
+
+  def format_daily_summary(document, summary)
+    <<~TEXT
+      Source: #{document.title}
+      Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
+
+      #{summary}
+    TEXT
   end
 
   def retrieve_chunks(scope, embedding)

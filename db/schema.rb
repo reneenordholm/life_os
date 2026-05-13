@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_24_134522) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_11_213234) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -40,6 +40,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_134522) do
     t.datetime "created_at", null: false
     t.string "doc_type"
     t.jsonb "metadata", default: {}
+    t.text "summary"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.index ["doc_type"], name: "index_documents_on_doc_type"
