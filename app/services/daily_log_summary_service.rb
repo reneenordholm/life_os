@@ -27,7 +27,7 @@ class DailyLogSummaryService
   def generate_summary
     log = <<~LOG
       Source: #{@document.title}
-      Metadata: #{@document.metadata.slice("date", "weekday", "category").to_json}
+      Metadata: #{(@document.metadata || {}).slice("date", "weekday", "category").to_json}
 
       #{@document.content}
     LOG
