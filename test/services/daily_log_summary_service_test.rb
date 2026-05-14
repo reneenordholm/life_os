@@ -121,6 +121,8 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
   end
 
   test "calls summary service for daily_log during ingestion" do
+    original_method = DailyLogSummaryService.method(:call)
+
     document = create_document!(
       title: "Daily Log Test",
       doc_type: "daily_log",
@@ -130,7 +132,6 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
 
     called = false
 
-    original_method = DailyLogSummaryService.method(:call)
     DailyLogSummaryService.define_singleton_method(:call) do |doc|
       called = true
     end
@@ -145,6 +146,8 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
   end
 
   test "does not call summary service for non-daily_log during ingestion" do
+    original_method = DailyLogSummaryService.method(:call)
+
     document = create_document!(
       title: "Recipe Test",
       doc_type: "recipe",
@@ -154,7 +157,6 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
 
     called = false
 
-    original_method = DailyLogSummaryService.method(:call)
     DailyLogSummaryService.define_singleton_method(:call) do |doc|
       called = true
     end
