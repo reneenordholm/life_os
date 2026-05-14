@@ -24,6 +24,18 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
     EmbeddingService.define_singleton_method(:client, original_client_method)
   end
 
+  def with_rails_env(name)
+    original_env_method = Rails.method(:env)
+
+    Rails.define_singleton_method(:env) do
+      ActiveSupport::StringInquirer.new(name)
+    end
+
+    yield
+  ensure
+    Rails.define_singleton_method(:env, original_env_method)
+  end
+
   test "persists generated summary" do
     fake_client = Object.new
     fake_client.define_singleton_method(:chat) do |parameters:|
@@ -106,5 +118,53 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
 
     document.reload
     assert_nil document.summary
+  end
+
+  test "calls summary service for daily_log during ingestion" do
+    document = create_document!(
+      title: "Daily Log Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Did stuff"
+    )
+
+    called = false
+
+    original_method = DailyLogSummaryService.method(:call)
+    DailyLogSummaryService.define_singleton_method(:call) do |doc|
+      called = true
+    end
+
+    with_rails_env("development") do
+      DocumentIngestionService.new(document).call
+    end
+
+    assert called
+  ensure
+    DailyLogSummaryService.define_singleton_method(:call, original_method)
+  end
+
+  test "does not call summary service for non-daily_log during ingestion" do
+    document = create_document!(
+      title: "Recipe Test",
+      doc_type: "recipe",
+      metadata: {},
+      content: "Some recipe content"
+    )
+
+    called = false
+
+    original_method = DailyLogSummaryService.method(:call)
+    DailyLogSummaryService.define_singleton_method(:call) do |doc|
+      called = true
+    end
+
+    with_rails_env("development") do
+      DocumentIngestionService.new(document).call
+    end
+
+    assert_not called
+  ensure
+    DailyLogSummaryService.define_singleton_method(:call, original_method)
   end
 end
