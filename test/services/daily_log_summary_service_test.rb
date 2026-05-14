@@ -167,4 +167,49 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
   ensure
     DailyLogSummaryService.define_singleton_method(:call, original_method)
   end
+
+  test "does not raise and does not overwrite summary when LLM raises" do
+    document = create_document!(
+      title: "Failure Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original content",
+      summary: "Existing summary"
+    )
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      raise StandardError, "LLM failure"
+    end
+
+    with_stubbed_llm_client(fake_client) do
+      # Should not raise
+      DailyLogSummaryService.call(document)
+    end
+
+    document.reload
+    assert_equal "Existing summary", document.summary
+  end
+
+  test "does not overwrite summary when LLM returns blank" do
+    document = create_document!(
+      title: "Blank Summary Test",
+      doc_type: "daily_log",
+      metadata: { date: "2026-05-05" },
+      content: "Original content",
+      summary: "Existing summary"
+    )
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:chat) do |parameters:|
+      { "choices" => [ { "message" => { "content" => "" } } ] }
+    end
+
+    with_stubbed_llm_client(fake_client) do
+      DailyLogSummaryService.call(document)
+    end
+
+    document.reload
+    assert_equal "Existing summary", document.summary
+  end
 end
