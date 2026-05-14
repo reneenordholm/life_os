@@ -1,6 +1,5 @@
 class AssistantService
   MAX_RANGE_CONTEXT_LENGTH = 12_000
-  LLM_MODEL = "gpt-4o-mini"
 
   def initialize(question)
     @question = question
@@ -214,59 +213,12 @@ class AssistantService
   end
 
   def summarize_daily_log(document)
-    return format_daily_summary(document, document.summary) if document.summary.present?
-
-    log = <<~LOG
-      Source: #{document.title}
-      Metadata: #{document.metadata.slice("date", "weekday", "category").to_json}
-
-      #{document.content}
-    LOG
-
-    response = EmbeddingService.client.chat(
-      parameters: {
-        model: LLM_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: <<~SYSTEM
-              Summarize this daily log into concise bullets.
-
-              Preserve:
-              - date
-              - work
-              - activities
-              - projects
-              - meals
-              - notes
-
-              Omit categories that are not present.
-
-              Use only the provided log.
-            SYSTEM
-          },
-          {
-            role: "user",
-            content: log
-          }
-        ]
-      }
-    )
-
-    summary = response.dig("choices", 0, "message", "content")
-
-    if summary.present?
-      document.update!(summary: summary)
-      format_daily_summary(document, summary)
+    if document.summary.present?
+      format_daily_summary(document, document.summary)
     else
-      log
+      # fallback if summarization failed
+      format_daily_summary(document, document.content)
     end
-  rescue StandardError => e
-    Rails.logger.warn(
-      "Summarization failed: #{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}"
-    )
-
-    log
   end
 
   def format_daily_summary(document, summary)
@@ -323,7 +275,7 @@ class AssistantService
 
     response = EmbeddingService.client.chat(
       parameters: {
-        model: LLM_MODEL,
+        model: Rails.application.config.x.llm_model,
         messages: [
           {
             role: "system",
