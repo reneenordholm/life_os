@@ -1,6 +1,5 @@
 class AssistantService
   MAX_RANGE_CONTEXT_LENGTH = 12_000
-  LLM_MODEL = "gpt-4o-mini"
 
   def initialize(question)
     @question = question

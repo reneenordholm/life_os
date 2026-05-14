@@ -1,6 +1,4 @@
 class DailyLogSummaryService
-  LLM_MODEL = "gpt-4o-mini"
-
   def self.call(document)
     new(document).call
   end
