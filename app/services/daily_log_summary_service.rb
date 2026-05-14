@@ -32,7 +32,7 @@ class DailyLogSummaryService
 
     response = EmbeddingService.client.chat(
       parameters: {
-        model: LLM_MODEL,
+        model: Rails.application.config.x.llm_model,
         messages: [
           {
             role: "system",
