@@ -1,1 +1,1 @@
-Rails.application.config.x.llm_model = "gpt-4o-mini"
+Rails.application.config.x.llm_model ||= ENV.fetch("LLM_MODEL", "gpt-4o-mini")
