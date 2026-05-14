@@ -31,6 +31,6 @@ class DocumentIngestionService
       EntityExtractionService.new(@document).call
     end
 
-    DailyLogSummaryService.call(@document) unless Rails.env.test?
+    DailyLogSummaryService.call(@document) if @document.doc_type == "daily_log" && !Rails.env.test?
   end
 end
