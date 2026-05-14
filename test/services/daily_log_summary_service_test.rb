@@ -175,8 +175,7 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       title: "Failure Test",
       doc_type: "daily_log",
       metadata: { date: "2026-05-05" },
-      content: "Original content",
-      summary: "Existing summary"
+      content: "Original content"
     )
 
     fake_client = Object.new
@@ -185,12 +184,11 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
     end
 
     with_stubbed_llm_client(fake_client) do
-      # Should not raise
       DailyLogSummaryService.call(document)
     end
 
     document.reload
-    assert_equal "Existing summary", document.summary
+    assert_nil document.summary
   end
 
   test "does not overwrite summary when LLM returns blank" do
@@ -198,8 +196,7 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
       title: "Blank Summary Test",
       doc_type: "daily_log",
       metadata: { date: "2026-05-05" },
-      content: "Original content",
-      summary: "Existing summary"
+      content: "Original content"
     )
 
     fake_client = Object.new
@@ -212,6 +209,6 @@ class DailyLogSummaryServiceTest < ActiveSupport::TestCase
     end
 
     document.reload
-    assert_equal "Existing summary", document.summary
+    assert_nil document.summary
   end
 end
