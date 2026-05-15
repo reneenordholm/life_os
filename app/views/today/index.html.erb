@@ -29,9 +29,13 @@
 
   <h2>Summary</h2>
 
-  <% if @daily_log&.summary.present? %>
-    <pre class="whitespace-pre-wrap"><%= @daily_log.summary %></pre>
+  <% if @daily_log.present? %>
+    <% if @daily_log.summary.present? %>
+      <pre class="whitespace-pre-wrap"><%= @daily_log.summary %></pre>
+    <% else %>
+      <p>No summary available.</p>
+    <% end %>
   <% else %>
-    <p>No summary available.</p>
+    <p>No summary available because there is no daily log yet.</p>
   <% end %>
 </div>
