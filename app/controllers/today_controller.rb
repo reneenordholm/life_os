@@ -4,7 +4,9 @@ class TodayController < ApplicationController
 
     @daily_log = Document
       .where(doc_type: "daily_log")
-      .find_by("metadata @> ?", { "date" => today }.to_json)
+      .where("metadata ->> 'date' = ?", today)
+      .order(id: :desc)
+      .first
 
     @calendar_events = [
       {
