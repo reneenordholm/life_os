@@ -20,7 +20,7 @@
   <h2>Daily Log</h2>
 
   <% if @daily_log.present? %>
-    <pre class="whitespace-pre-wrap">><%= @daily_log.content %></pre>
+    <pre class="whitespace-pre-wrap"><%= @daily_log.content %></pre>
   <% else %>
     <p>No daily log yet.</p>
   <% end %>
@@ -30,7 +30,7 @@
   <h2>Summary</h2>
 
   <% if @daily_log&.summary.present? %>
-    <pre class="whitespace-pre-wrap">><%= @daily_log.summary %></pre>
+    <pre class="whitespace-pre-wrap"><%= @daily_log.summary %></pre>
   <% else %>
     <p>No summary available.</p>
   <% end %>
