@@ -2,10 +2,9 @@ class TodayController < ApplicationController
   def index
     today = Date.current.iso8601
 
-    @daily_log = Document.find_by(
-      doc_type: "daily_log",
-      metadata: { date: today }
-    )
+    @daily_log = Document
+      .where(doc_type: "daily_log")
+      .find_by("metadata @> ?", { "date" => today }.to_json)
 
     @calendar_events = [
       {
