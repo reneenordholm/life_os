@@ -31,7 +31,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
         title: "Yesterday's Log",
         doc_type: "daily_log",
         metadata: {
-          date: (1.day.ago).iso8601
+          date: frozen_date.yesterday.iso8601
         },
         summary: "Yesterday summary",
         content: "Yesterday content"
