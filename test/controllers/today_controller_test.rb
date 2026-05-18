@@ -15,7 +15,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
         content: "Today content"
       )
 
-      get today_index_url
+      get root_url
 
       assert_response :success
       assert_includes @response.body, daily_log.summary
@@ -37,7 +37,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
         content: "Yesterday content"
       )
 
-      get today_index_url
+      get root_url
 
       assert_response :success
       assert_not_includes @response.body, daily_log.summary
@@ -61,7 +61,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
         summary: nil
       )
 
-      get today_index_url
+      get root_url
 
       assert_response :success
       assert_includes @response.body, daily_log.content
