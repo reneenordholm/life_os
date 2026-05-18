@@ -11,7 +11,7 @@ class CreateCalendarEvents < ActiveRecord::Migration[8.1]
       t.timestamps
 
       t.index :starts_at
-      t.index [:source, :external_id],
+      t.index [ :source, :external_id ],
         unique: true,
         where: "source IS NOT NULL AND external_id IS NOT NULL"
     end
