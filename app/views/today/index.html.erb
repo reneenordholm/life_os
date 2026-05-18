@@ -1,0 +1,41 @@
+<div class="max-w-3xl mx-auto my-10 font-sans">
+  <h1>Today</h1>
+
+  <p><%= Date.current.strftime("%A, %B %-d, %Y") %></p>
+
+  <hr>
+
+  <h2>Calendar</h2>
+
+  <% @calendar_events.each do |event| %>
+    <div class="mb-3">
+      <strong><%= event[:starts_at] %></strong>
+      —
+      <%= event[:title] %>
+    </div>
+  <% end %>
+
+  <hr>
+
+  <h2>Daily Log</h2>
+
+  <% if @daily_log.present? %>
+    <pre class="whitespace-pre-wrap"><%= @daily_log.content %></pre>
+  <% else %>
+    <p>No daily log yet.</p>
+  <% end %>
+
+  <hr>
+
+  <h2>Summary</h2>
+
+  <% if @daily_log.present? %>
+    <% if @daily_log.summary.present? %>
+      <pre class="whitespace-pre-wrap"><%= @daily_log.summary %></pre>
+    <% else %>
+      <p>No summary available.</p>
+    <% end %>
+  <% else %>
+    <p>No summary available because there is no daily log yet.</p>
+  <% end %>
+</div>
