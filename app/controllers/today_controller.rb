@@ -8,15 +8,8 @@ class TodayController < ApplicationController
       .order(id: :desc)
       .first
 
-    @calendar_events = [
-      {
-        title: "Morning Standup",
-        starts_at: "9:00 AM"
-      },
-      {
-        title: "1:1 Meeting",
-        starts_at: "1:00 PM"
-      }
-    ]
+    @calendar_events = CalendarEvent
+      .where(starts_at: Date.current.all_day)
+      .order(:starts_at)
   end
 end
