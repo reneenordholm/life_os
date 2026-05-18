@@ -1,14 +1,5 @@
 class CalendarEvent < ApplicationRecord
   validates :title, presence: true
   validates :starts_at, presence: true
-  validate :ends_at_cannot_be_before_starts_at
-
-  private
-
-  def ends_at_cannot_be_before_starts_at
-    return if ends_at.nil? || starts_at.nil?
-    return unless ends_at < starts_at
-
-    errors.add(:ends_at, "must be greater than or equal to starts_at")
-  end
+  validates :ends_at, comparison: { greater_than_or_equal_to: :starts_at }, allow_nil: true
 end
