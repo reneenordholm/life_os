@@ -1,0 +1,4 @@
+# Fixtures are intentionally not defined here because the current test setup
+# has fixture loading disabled in test/test_helper.rb.
+# Keeping record entries in this file would be misleading because they are
+# not loaded by the test suite.
