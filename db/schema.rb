@@ -24,6 +24,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_18_142530) do
     t.datetime "starts_at", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["source", "external_id"], name: "index_calendar_events_on_source_and_external_id", unique: true
+    t.index ["starts_at"], name: "index_calendar_events_on_starts_at"
   end
 
   create_table "document_chunks", force: :cascade do |t|

@@ -9,6 +9,9 @@ class CreateCalendarEvents < ActiveRecord::Migration[8.1]
       t.string :external_id
 
       t.timestamps
+
+      t.index :starts_at
+      t.index [ :source, :external_id ], unique: true
     end
   end
 end
