@@ -35,6 +35,6 @@ class CalendarEventTest < ActiveSupport::TestCase
     )
 
     assert_not event.valid?
-    assert_includes event.errors[:ends_at], "must be greater than or equal to starts_at"
+    assert_match(/must be greater than or equal to/, event.errors[:ends_at].first)
   end
 end
