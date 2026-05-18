@@ -1,0 +1,19 @@
+class CreateCalendarEvents < ActiveRecord::Migration[8.1]
+  def change
+    create_table :calendar_events do |t|
+      t.string :title, null: false
+      t.datetime :starts_at, null: false
+      t.datetime :ends_at
+      t.string :location
+      t.string :source
+      t.string :external_id
+
+      t.timestamps
+
+      t.index :starts_at
+      t.index [ :source, :external_id ],
+        unique: true,
+        where: "source IS NOT NULL AND external_id IS NOT NULL"
+    end
+  end
+end
