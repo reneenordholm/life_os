@@ -21,8 +21,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_18_142530) do
     t.string "external_id"
     t.string "location"
     t.string "source"
-    t.datetime "starts_at"
-    t.string "title"
+    t.datetime "starts_at", null: false
+    t.string "title", null: false
     t.datetime "updated_at", null: false
   end
 
