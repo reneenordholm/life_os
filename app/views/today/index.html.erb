@@ -66,7 +66,7 @@
 
                   <% if event.ends_at.present? %>
                     —
-                    <%= event.ends_at.to_date == event.starts_at.to_date ? event.ends_at.strftime("%-I:%M %p") : event.ends_at.strftime("%a %-I:%M %p") %>
+                    <%= event.ends_at.to_date == event.starts_at.to_date ? event.ends_at.strftime("%-I:%M %p") : event.ends_at.strftime("%b %-d, %-I:%M %p") %>
                   <% end %>
                 </div>
 
