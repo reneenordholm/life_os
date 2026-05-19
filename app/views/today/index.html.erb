@@ -16,11 +16,12 @@
   <section class="mb-8 grid gap-4 md:grid-cols-3">
     <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <p class="text-sm font-medium text-gray-500">Calendar</p>
+      <% event_count = @calendar_events.size %>
       <p class="mt-2 text-3xl font-bold text-gray-900">
-        <%= @calendar_events.count %>
+        <%= event_count %>
       </p>
       <p class="mt-1 text-sm text-gray-500">
-        <%= "event".pluralize(@calendar_events.count) %> today
+        <%= "event".pluralize(event_count) %> today
       </p>
     </div>
 
