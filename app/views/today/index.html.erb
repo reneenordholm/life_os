@@ -1,66 +1,125 @@
-<div class="max-w-3xl mx-auto my-10 font-sans">
-  <h1>Today</h1>
+<div class="mx-auto max-w-5xl px-4 py-8 font-sans">
+  <header class="mb-8">
+    <p class="text-sm font-medium uppercase tracking-wide text-gray-500">
+      Life OS
+    </p>
 
-  <p><%= Date.current.strftime("%A, %B %-d, %Y") %></p>
+    <h1 class="mt-2 text-4xl font-bold tracking-tight text-gray-900">
+      <%= @greeting %>, Renee
+    </h1>
 
-  <hr>
+    <p class="mt-2 text-lg text-gray-600">
+      <%= Date.current.strftime("%A, %B %-d, %Y") %>
+    </p>
+  </header>
 
-  <h2 class="text-xl font-semibold mt-8 mb-4">Calendar</h2>
+  <section class="mb-8 grid gap-4 md:grid-cols-3">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p class="text-sm font-medium text-gray-500">Calendar</p>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        <%= @calendar_events.count %>
+      </p>
+      <p class="mt-1 text-sm text-gray-500">
+        <%= "event".pluralize(@calendar_events.count) %> today
+      </p>
+    </div>
 
-  <div data-testid="today-calendar">
-    <% if @calendar_events.any? %>
-      <% @calendar_events.each do |event| %>
-        <div class="mb-3 rounded-lg border border-gray-200 p-3" data-testid="calendar-event">
-          <div class="font-medium" data-testid="calendar-event-title">
-            <%= event.title %>
-          </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p class="text-sm font-medium text-gray-500">Daily log</p>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        <%= @daily_log.present? ? "Yes" : "No" %>
+      </p>
+      <p class="mt-1 text-sm text-gray-500">
+        <%= @daily_log.present? ? "Logged for today" : "No entry yet" %>
+      </p>
+    </div>
 
-          <div class="text-sm text-gray-600" data-testid="calendar-event-time">
-            <%= event.starts_at.strftime("%-I:%M %p") %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p class="text-sm font-medium text-gray-500">Summary</p>
+      <p class="mt-2 text-3xl font-bold text-gray-900">
+        <%= @daily_log&.summary.present? ? "Ready" : "—" %>
+      </p>
+      <p class="mt-1 text-sm text-gray-500">
+        <%= @daily_log&.summary.present? ? "AI summary available" : "Nothing summarized yet" %>
+      </p>
+    </div>
+  </section>
 
-            <% if event.ends_at.present? %>
-              —
-              <% if event.ends_at.to_date == event.starts_at.to_date %>
-                <%= event.ends_at.strftime("%-I:%M %p") %>
-              <% else %>
-                <%= event.ends_at.strftime("%b %-d, %-I:%M %p") %>
-              <% end %>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-900">Calendar</h2>
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500">Today</span>
+      </div>
+
+      <div data-testid="today-calendar">
+        <% if @calendar_events.any? %>
+          <div class="space-y-3">
+            <% @calendar_events.each do |event| %>
+              <div class="rounded-xl border border-gray-100 bg-gray-50 p-4" data-testid="calendar-event">
+                <div class="font-medium text-gray-900" data-testid="calendar-event-title">
+                  <%= event.title %>
+                </div>
+
+                <div class="mt-1 text-sm text-gray-600" data-testid="calendar-event-time">
+                  <%= event.starts_at.strftime("%-I:%M %p") %>
+
+                  <% if event.ends_at.present? %>
+                    —
+                    <%= event.ends_at.to_date == event.starts_at.to_date ? event.ends_at.strftime("%-I:%M %p") : event.ends_at.strftime("%a %-I:%M %p") %>
+                  <% end %>
+                </div>
+
+                <% if event.location.present? %>
+                  <div class="mt-2 text-sm text-gray-500" data-testid="calendar-event-location">
+                    📍 <%= event.location %>
+                  </div>
+                <% end %>
+              </div>
             <% end %>
           </div>
+        <% else %>
+          <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500" data-testid="calendar-empty-state">
+            No events today.
+          </p>
+        <% end %>
+      </div>
+    </section>
 
-          <% if event.location.present? %>
-            <div class="text-sm text-gray-500 mt-1" data-testid="calendar-event-location">
-              📍 <%= event.location %>
-            </div>
-          <% end %>
-        </div>
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-900">Daily Log</h2>
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500">Today</span>
+      </div>
+
+      <% if @daily_log.present? %>
+        <pre class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.content %></pre>
+      <% else %>
+        <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+          No daily log yet.
+        </p>
       <% end %>
-    <% else %>
-      <p data-testid="calendar-empty-state">No events today.</p>
-    <% end %>
+    </section>
   </div>
 
-  <hr>
+  <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-gray-900">Summary</h2>
+      <span class="rounded-full bg-purple-50 px-3 py-1 text-sm text-purple-600">AI-generated</span>
+    </div>
 
-  <h2>Daily Log</h2>
-
-  <% if @daily_log.present? %>
-    <pre class="whitespace-pre-wrap"><%= @daily_log.content %></pre>
-  <% else %>
-    <p>No daily log yet.</p>
-  <% end %>
-
-  <hr>
-
-  <h2>Summary</h2>
-
-  <% if @daily_log.present? %>
-    <% if @daily_log.summary.present? %>
-      <pre class="whitespace-pre-wrap"><%= @daily_log.summary %></pre>
+    <% if @daily_log.present? %>
+      <% if @daily_log.summary.present? %>
+        <pre class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.summary %></pre>
+      <% else %>
+        <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+          No summary available.
+        </p>
+      <% end %>
     <% else %>
-      <p>No summary available.</p>
+      <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+        No summary available because there is no daily log yet.
+      </p>
     <% end %>
-  <% else %>
-    <p>No summary available because there is no daily log yet.</p>
-  <% end %>
+  </section>
 </div>
