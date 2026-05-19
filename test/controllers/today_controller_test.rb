@@ -110,4 +110,31 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       assert_not_includes @response.body, "Elsewhere"
     end
   end
+
+  test "renders morning greeting" do
+    travel_to Time.zone.local(2024, 1, 15, 8, 0) do
+      get root_url
+
+      assert_response :success
+      assert_includes @response.body, "Good morning"
+    end
+  end
+
+  test "renders afternoon greeting" do
+    travel_to Time.zone.local(2024, 1, 15, 14, 0) do
+      get root_url
+
+      assert_response :success
+      assert_includes @response.body, "Good afternoon"
+    end
+  end
+
+  test "renders evening greeting" do
+    travel_to Time.zone.local(2024, 1, 15, 20, 0) do
+      get root_url
+
+      assert_response :success
+      assert_includes @response.body, "Good evening"
+    end
+  end
 end
