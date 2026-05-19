@@ -5,15 +5,40 @@
 
   <hr>
 
-  <h2>Calendar</h2>
+  <h2 class="text-xl font-semibold mt-8 mb-4">Calendar</h2>
 
-  <% @calendar_events.each do |event| %>
-    <div class="mb-3">
-      <strong><%= event[:starts_at] %></strong>
-      —
-      <%= event[:title] %>
-    </div>
-  <% end %>
+  <div data-testid="today-calendar">
+    <% if @calendar_events.any? %>
+      <% @calendar_events.each do |event| %>
+        <div class="mb-3 rounded-lg border border-gray-200 p-3" data-testid="calendar-event">
+          <div class="font-medium" data-testid="calendar-event-title">
+            <%= event.title %>
+          </div>
+
+          <div class="text-sm text-gray-600" data-testid="calendar-event-time">
+            <%= event.starts_at.strftime("%-I:%M %p") %>
+
+            <% if event.ends_at.present? %>
+              —
+              <% if event.ends_at.to_date == event.starts_at.to_date %>
+                <%= event.ends_at.strftime("%-I:%M %p") %>
+              <% else %>
+                <%= event.ends_at.strftime("%b %-d, %-I:%M %p") %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <% if event.location.present? %>
+            <div class="text-sm text-gray-500 mt-1" data-testid="calendar-event-location">
+              📍 <%= event.location %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    <% else %>
+      <p data-testid="calendar-empty-state">No events today.</p>
+    <% end %>
+  </div>
 
   <hr>
 
