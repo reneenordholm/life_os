@@ -19,7 +19,12 @@
             <%= event.starts_at.strftime("%-I:%M %p") %>
 
             <% if event.ends_at.present? %>
-              — <%= event.ends_at.strftime("%-I:%M %p") %>
+              —
+              <% if event.ends_at.to_date == event.starts_at.to_date %>
+                <%= event.ends_at.strftime("%-I:%M %p") %>
+              <% else %>
+                <%= event.ends_at.strftime("%b %-d, %-I:%M %p") %>
+              <% end %>
             <% end %>
           </div>
 
