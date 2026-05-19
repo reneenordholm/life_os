@@ -69,4 +69,45 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       assert_not_includes @response.body, "No summary available because there is no daily log yet."
     end
   end
+
+  test "renders today's calendar events" do
+    frozen_date = Date.new(2024, 1, 15)
+
+    travel_to(frozen_date) do
+      event = CalendarEvent.create!(
+        title: "Dentist Appointment",
+        starts_at: Time.zone.local(2024, 1, 15, 9, 0),
+        ends_at: Time.zone.local(2024, 1, 15, 10, 0),
+        location: "Downtown"
+      )
+
+      get root_url
+
+      assert_response :success
+      assert_includes @response.body, event.title
+      assert_includes @response.body, "9:00 AM"
+      assert_includes @response.body, "10:00 AM"
+      assert_includes @response.body, event.location
+    end
+  end
+
+  test "renders empty calendar state when no events exist today" do
+    frozen_date = Date.new(2024, 1, 15)
+
+    travel_to(frozen_date) do
+      CalendarEvent.create!(
+        title: "Yesterday Event",
+        starts_at: Time.zone.local(2024, 1, 14, 9, 0),
+        ends_at: Time.zone.local(2024, 1, 14, 10, 0),
+        location: "Elsewhere"
+      )
+
+      get root_url
+
+      assert_response :success
+      assert_includes @response.body, "No events today."
+      assert_not_includes @response.body, "Yesterday Event"
+      assert_not_includes @response.body, "Elsewhere"
+    end
+  end
 end
