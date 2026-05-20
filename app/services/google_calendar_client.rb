@@ -25,15 +25,32 @@ class GoogleCalendarClient
   private
 
   def authorization
+    validate_google_credentials!
+
     client = Signet::OAuth2::Client.new(
       token_credential_uri: "https://oauth2.googleapis.com/token",
-      client_id: ENV.fetch("GOOGLE_CLIENT_ID"),
-      client_secret: ENV.fetch("GOOGLE_CLIENT_SECRET"),
-      refresh_token: ENV.fetch("GOOGLE_REFRESH_TOKEN")
+      client_id: ENV["GOOGLE_CLIENT_ID"],
+      client_secret: ENV["GOOGLE_CLIENT_SECRET"],
+      refresh_token: ENV["GOOGLE_REFRESH_TOKEN"]
     )
 
     client.fetch_access_token!
 
     client
+  end
+
+  def validate_google_credentials!
+    required_env_vars = %w[
+      GOOGLE_CLIENT_ID
+      GOOGLE_CLIENT_SECRET
+      GOOGLE_REFRESH_TOKEN
+    ]
+
+    missing_env_vars = required_env_vars.select { |env_var| ENV[env_var].to_s.strip.empty? }
+    return if missing_env_vars.empty?
+
+    raise NotImplementedError,
+          "Google Calendar credentials are not configured. " \
+          "Set the following environment variables: #{missing_env_vars.join(', ')}"
   end
 end
