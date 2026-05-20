@@ -1,8 +1,6 @@
-#!/usr/bin/env ruby
-
-require_relative "../config/environment"
-
 require "bundler/setup"
+require "dotenv/load"
+
 require "googleauth"
 require "launchy"
 require "uri"
