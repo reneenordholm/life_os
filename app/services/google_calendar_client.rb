@@ -49,7 +49,7 @@ class GoogleCalendarClient
     missing_env_vars = required_env_vars.select { |env_var| ENV[env_var].to_s.strip.empty? }
     return if missing_env_vars.empty?
 
-    raise NotImplementedError,
+    raise ArgumentError,
           "Google Calendar credentials are not configured. " \
           "Set the following environment variables: #{missing_env_vars.join(', ')}"
   end
