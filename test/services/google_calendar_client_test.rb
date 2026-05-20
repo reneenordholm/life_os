@@ -5,16 +5,19 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
     client = GoogleCalendarClient.new
 
     client.define_singleton_method(:validate_google_credentials!) do
-      raise NotImplementedError,
-            "Google Calendar credentials are not configured."
+      raise ArgumentError,
+            "Google Calendar credentials are not configured. " \
+            "Set the following environment variables: GOOGLE_CLIENT_ID"
     end
 
-    assert_raises(NotImplementedError) do
+    error = assert_raises(ArgumentError) do
       client.events_for_range(
         start_time: Time.current.beginning_of_day,
         end_time: Time.current.end_of_day
       )
     end
+
+    assert_includes error.message, "Google Calendar credentials are not configured"
   end
 
   test "fetches events for a time range" do
