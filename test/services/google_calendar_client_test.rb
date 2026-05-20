@@ -12,7 +12,7 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
 
     client = GoogleCalendarClient.new
 
-    assert_raises(KeyError) do
+    assert_raises(NotImplementedError) do
       client.events_for_range(
         start_time: Time.current.beginning_of_day,
         end_time: Time.current.end_of_day
