@@ -29,9 +29,9 @@ class GoogleCalendarClient
 
     client = Signet::OAuth2::Client.new(
       token_credential_uri: "https://oauth2.googleapis.com/token",
-      client_id: ENV["GOOGLE_CLIENT_ID"],
-      client_secret: ENV["GOOGLE_CLIENT_SECRET"],
-      refresh_token: ENV["GOOGLE_REFRESH_TOKEN"]
+      client_id: ENV.fetch("GOOGLE_CLIENT_ID").strip,
+      client_secret: ENV.fetch("GOOGLE_CLIENT_SECRET").strip,
+      refresh_token: ENV.fetch("GOOGLE_REFRESH_TOKEN").strip
     )
 
     client.fetch_access_token!
