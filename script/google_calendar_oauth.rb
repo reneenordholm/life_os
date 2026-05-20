@@ -26,7 +26,14 @@ Launchy.open(url)
 
 puts
 puts "Paste the authorization code here:"
-code = STDIN.gets.chomp
+code_input = STDIN.gets
+
+if code_input.nil?
+  warn "No authorization code was provided on standard input. Exiting."
+  exit 1
+end
+
+code = code_input.chomp
 
 credentials = authorizer.get_credentials_from_code(
   code: code,
