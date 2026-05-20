@@ -3,7 +3,6 @@ require "dotenv/load"
 
 require "googleauth"
 require "launchy"
-require "uri"
 
 scope = "https://www.googleapis.com/auth/calendar.readonly"
 
