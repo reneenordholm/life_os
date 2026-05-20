@@ -1,4 +1,5 @@
 require "google/apis/calendar_v3"
+require "signet/oauth_2/client"
 
 class GoogleCalendarClient
   Calendar = Google::Apis::CalendarV3
@@ -24,6 +25,15 @@ class GoogleCalendarClient
   private
 
   def authorization
-    raise NotImplementedError, "Google Calendar authorization is not configured yet"
+    client = Signet::OAuth2::Client.new(
+      token_credential_uri: "https://oauth2.googleapis.com/token",
+      client_id: ENV.fetch("GOOGLE_CLIENT_ID"),
+      client_secret: ENV.fetch("GOOGLE_CLIENT_SECRET"),
+      refresh_token: ENV.fetch("GOOGLE_REFRESH_TOKEN")
+    )
+
+    client.fetch_access_token!
+
+    client
   end
 end

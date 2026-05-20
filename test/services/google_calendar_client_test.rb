@@ -2,12 +2,26 @@ require "test_helper"
 
 class GoogleCalendarClientTest < ActiveSupport::TestCase
   test "raises when authorization is not configured" do
-    assert_raises(NotImplementedError) do
-      GoogleCalendarClient.new.events_for_range(
+    original_client_id = ENV["GOOGLE_CLIENT_ID"]
+    original_client_secret = ENV["GOOGLE_CLIENT_SECRET"]
+    original_refresh_token = ENV["GOOGLE_REFRESH_TOKEN"]
+
+    ENV.delete("GOOGLE_CLIENT_ID")
+    ENV.delete("GOOGLE_CLIENT_SECRET")
+    ENV.delete("GOOGLE_REFRESH_TOKEN")
+
+    client = GoogleCalendarClient.new
+
+    assert_raises(KeyError) do
+      client.events_for_range(
         start_time: Time.current.beginning_of_day,
         end_time: Time.current.end_of_day
       )
     end
+  ensure
+    ENV["GOOGLE_CLIENT_ID"] = original_client_id
+    ENV["GOOGLE_CLIENT_SECRET"] = original_client_secret
+    ENV["GOOGLE_REFRESH_TOKEN"] = original_refresh_token
   end
 
   test "fetches events for a time range" do
