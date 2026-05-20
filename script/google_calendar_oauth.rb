@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+
+require_relative "../config/environment"
+
+require "bundler/setup"
+require "googleauth"
+require "launchy"
+require "uri"
+
+scope = "https://www.googleapis.com/auth/calendar.readonly"
+
+client_id = ENV.fetch("GOOGLE_CLIENT_ID")
+client_secret = ENV.fetch("GOOGLE_CLIENT_SECRET")
+
+authorizer = Google::Auth::UserAuthorizer.new(
+  Google::Auth::ClientId.new(client_id, client_secret),
+  scope,
+  nil
+)
+
+url = authorizer.get_authorization_url(
+  base_url: "http://localhost:3000/oauth2callback",
+  access_type: "offline",
+  prompt: "consent"
+)
+
+puts "Opening Google OAuth page..."
+Launchy.open(url)
+
+puts
+puts "Paste the authorization code here:"
+code = STDIN.gets.chomp
+
+credentials = authorizer.get_credentials_from_code(
+  code: code,
+  base_url: "http://localhost:3000/oauth2callback"
+)
+
+puts
+puts "GOOGLE_REFRESH_TOKEN=#{credentials.refresh_token}"
