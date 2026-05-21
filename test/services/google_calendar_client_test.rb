@@ -5,17 +5,25 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
     client = GoogleCalendarClient.new
     original_env_lookup = ENV.method(:[])
 
-    error = ENV.stub(:[], ->(key) { key.start_with?("GOOGLE_") ? nil : original_env_lookup.call(key) }) do
-      assert_raises(ArgumentError) do
-        client.events_for_range(
-          start_time: Time.current.beginning_of_day,
-          end_time: Time.current.end_of_day
-        )
+    ENV.define_singleton_method(:[]) do |key|
+      if key.start_with?("GOOGLE_")
+        nil
+      else
+        original_env_lookup.call(key)
       end
+    end
+
+    error = assert_raises(ArgumentError) do
+      client.events_for_range(
+        start_time: Time.current.beginning_of_day,
+        end_time: Time.current.end_of_day
+      )
     end
 
     assert_includes error.message, "Google Calendar credentials are not configured"
     assert_includes error.message, "GOOGLE_CLIENT_ID"
+  ensure
+    ENV.define_singleton_method(:[], original_env_lookup)
   end
 
   test "fetches events for a time range" do
