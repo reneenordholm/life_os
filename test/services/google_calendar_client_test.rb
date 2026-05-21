@@ -2,16 +2,9 @@ require "test_helper"
 
 class GoogleCalendarClientTest < ActiveSupport::TestCase
   test "raises when authorization is not configured" do
-    client = GoogleCalendarClient.new
-    original_env_lookup = ENV.method(:[])
+    fake_env = {}
 
-    ENV.define_singleton_method(:[]) do |key|
-      if key.start_with?("GOOGLE_")
-        nil
-      else
-        original_env_lookup.call(key)
-      end
-    end
+    client = GoogleCalendarClient.new(env: fake_env)
 
     error = assert_raises(ArgumentError) do
       client.events_for_range(
@@ -22,8 +15,8 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
 
     assert_includes error.message, "Google Calendar credentials are not configured"
     assert_includes error.message, "GOOGLE_CLIENT_ID"
-  ensure
-    ENV.define_singleton_method(:[], original_env_lookup)
+    assert_includes error.message, "GOOGLE_CLIENT_SECRET"
+    assert_includes error.message, "GOOGLE_REFRESH_TOKEN"
   end
 
   test "fetches events for a time range" do
