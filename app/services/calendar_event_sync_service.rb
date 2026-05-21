@@ -43,7 +43,7 @@ class CalendarEventSyncService
 
   def event_time(event_date_time)
     return event_date_time.date_time if event_date_time.date_time.present?
-    return event_date_time.date.to_time if event_date_time.date.present?
+    return event_date_time.date.in_time_zone if event_date_time.date.present?
 
     nil
   end
