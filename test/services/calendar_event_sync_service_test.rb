@@ -100,4 +100,37 @@ class CalendarEventSyncServiceTest < ActiveSupport::TestCase
 
     assert_equal "Untitled event", calendar_event.title
   end
+
+  test "syncs all-day Google calendar events" do
+    event_date = Date.new(2026, 5, 21)
+
+    google_event = GoogleEvent.new(
+      id: "google-all-day-event",
+      summary: "Boat Day",
+      start: EventDateTime.new(date: event_date),
+      end: EventDateTime.new(date: event_date),
+      location: "Lake Union"
+    )
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:events_for_range) do |start_time:, end_time:|
+      [ google_event ]
+    end
+
+    CalendarEventSyncService.call(
+      start_time: event_date.beginning_of_day,
+      end_time: event_date.end_of_day,
+      client: fake_client
+    )
+
+    calendar_event = CalendarEvent.find_by!(
+      source: "google",
+      external_id: "google-all-day-event"
+    )
+
+    assert_equal "Boat Day", calendar_event.title
+    assert_equal event_date.in_time_zone, calendar_event.starts_at
+    assert_equal event_date.in_time_zone, calendar_event.ends_at
+    assert_equal "Lake Union", calendar_event.location
+  end
 end
