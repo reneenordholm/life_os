@@ -1,0 +1,65 @@
+class CalendarEventSyncService
+  SOURCE = "google"
+
+  def self.call(start_time:, end_time:, client: GoogleCalendarClient.new)
+    new(start_time: start_time, end_time: end_time, client: client).call
+  end
+
+  def initialize(start_time:, end_time:, client:)
+    @start_time = start_time
+    @end_time = end_time
+    @client = client
+  end
+
+  def call
+    events = @client.events_for_range(
+      start_time: @start_time,
+      end_time: @end_time
+    )
+
+    events.map do |google_event|
+      sync_event(google_event)
+    end
+  end
+
+  private
+
+  def sync_event(google_event)
+    retries = 0
+
+    begin
+      calendar_event = CalendarEvent.find_or_initialize_by(
+        source: SOURCE,
+        external_id: google_event.id
+      )
+
+      calendar_event.assign_attributes(
+        title: google_event.summary.presence || "Untitled event",
+        starts_at: event_start_time(google_event.start),
+        ends_at: event_end_time(google_event.end),
+        location: google_event.location
+      )
+
+      calendar_event.save!
+      calendar_event
+    rescue ActiveRecord::RecordNotUnique
+      retries += 1
+      retry if retries <= 1
+      raise
+    end
+  end
+
+  def event_start_time(event_date_time)
+    return event_date_time.date_time if event_date_time.date_time.present?
+    return event_date_time.date.in_time_zone if event_date_time.date.present?
+
+    nil
+  end
+
+  def event_end_time(event_date_time)
+    return event_date_time.date_time if event_date_time.date_time.present?
+    return event_date_time.date.in_time_zone - 1.second if event_date_time.date.present?
+
+    nil
+  end
+end
