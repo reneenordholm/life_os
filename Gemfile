@@ -56,6 +56,10 @@ gem "dotenv-rails", groups: [ :development, :test ]
 gem "google-apis-calendar_v3"
 
 group :development, :test do
+  # OAuth helper script dependencies
+  gem "googleauth", require: false
+  gem "launchy", require: false
+
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
 
