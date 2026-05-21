@@ -27,7 +27,7 @@ class CalendarEventSyncService
       .where(source: SOURCE)
       .where(starts_at: @start_time..@end_time)
       .where.not(external_id: synced_external_ids)
-      .destroy_all
+      .delete_all
 
     synced_events
   end
