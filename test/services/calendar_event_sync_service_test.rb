@@ -108,7 +108,7 @@ class CalendarEventSyncServiceTest < ActiveSupport::TestCase
       id: "google-all-day-event",
       summary: "Boat Day",
       start: EventDateTime.new(date: event_date),
-      end: EventDateTime.new(date: event_date),
+      end: EventDateTime.new(date: event_date + 1.day),
       location: "Lake Union"
     )
 
@@ -130,7 +130,7 @@ class CalendarEventSyncServiceTest < ActiveSupport::TestCase
 
     assert_equal "Boat Day", calendar_event.title
     assert_equal event_date.in_time_zone, calendar_event.starts_at
-    assert_equal event_date.in_time_zone, calendar_event.ends_at
+    assert_equal (event_date + 1.day).in_time_zone - 1.second, calendar_event.ends_at
     assert_equal "Lake Union", calendar_event.location
   end
 end

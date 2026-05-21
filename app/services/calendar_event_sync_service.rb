@@ -35,8 +35,8 @@ class CalendarEventSyncService
 
       calendar_event.assign_attributes(
         title: google_event.summary.presence || "Untitled event",
-        starts_at: event_time(google_event.start),
-        ends_at: event_time(google_event.end),
+        starts_at: event_start_time(google_event.start),
+        ends_at: event_end_time(google_event.end),
         location: google_event.location
       )
 
@@ -49,9 +49,16 @@ class CalendarEventSyncService
     end
   end
 
-  def event_time(event_date_time)
+  def event_start_time(event_date_time)
     return event_date_time.date_time if event_date_time.date_time.present?
     return event_date_time.date.in_time_zone if event_date_time.date.present?
+
+    nil
+  end
+
+  def event_end_time(event_date_time)
+    return event_date_time.date_time if event_date_time.date_time.present?
+    return event_date_time.date.in_time_zone - 1.second if event_date_time.date.present?
 
     nil
   end
