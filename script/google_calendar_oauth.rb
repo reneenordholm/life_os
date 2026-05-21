@@ -33,7 +33,12 @@ if code_input.nil?
   exit 1
 end
 
-code = code_input.chomp
+code = code_input.strip
+
+if code.empty?
+  warn "Authorization code cannot be blank. Exiting."
+  exit 1
+end
 
 credentials = authorizer.get_credentials_from_code(
   code: code,
