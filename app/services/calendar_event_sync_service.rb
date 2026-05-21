@@ -25,20 +25,28 @@ class CalendarEventSyncService
   private
 
   def sync_event(google_event)
-    calendar_event = CalendarEvent.find_or_initialize_by(
-      source: SOURCE,
-      external_id: google_event.id
-    )
+    retries = 0
 
-    calendar_event.assign_attributes(
-      title: google_event.summary.presence || "Untitled event",
-      starts_at: event_time(google_event.start),
-      ends_at: event_time(google_event.end),
-      location: google_event.location
-    )
+    begin
+      calendar_event = CalendarEvent.find_or_initialize_by(
+        source: SOURCE,
+        external_id: google_event.id
+      )
 
-    calendar_event.save!
-    calendar_event
+      calendar_event.assign_attributes(
+        title: google_event.summary.presence || "Untitled event",
+        starts_at: event_time(google_event.start),
+        ends_at: event_time(google_event.end),
+        location: google_event.location
+      )
+
+      calendar_event.save!
+      calendar_event
+    rescue ActiveRecord::RecordNotUnique
+      retries += 1
+      retry if retries <= 1
+      raise
+    end
   end
 
   def event_time(event_date_time)
