@@ -63,11 +63,13 @@
                 </div>
 
                 <div class="mt-1 text-sm text-gray-600" data-testid="calendar-event-time">
-                  <%= event.starts_at.strftime("%-I:%M %p") %>
+                  <%= event.starts_at.in_time_zone.strftime("%-I:%M %p") %>
 
                   <% if event.ends_at.present? %>
                     —
-                    <%= event.ends_at.to_date == event.starts_at.to_date ? event.ends_at.strftime("%-I:%M %p") : event.ends_at.strftime("%b %-d, %-I:%M %p") %>
+                    <%= event.ends_at.in_time_zone.to_date == event.starts_at.in_time_zone.to_date ?
+                      event.ends_at.in_time_zone.strftime("%-I:%M %p") :
+                      event.ends_at.in_time_zone.strftime("%b %-d, %-I:%M %p") %>
                   <% end %>
                 </div>
 

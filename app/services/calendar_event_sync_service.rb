@@ -17,9 +17,19 @@ class CalendarEventSyncService
       end_time: @end_time
     )
 
-    events.map do |google_event|
+    synced_events = events.map do |google_event|
       sync_event(google_event)
     end
+
+    synced_external_ids = events.map(&:id)
+
+    CalendarEvent
+      .where(source: SOURCE)
+      .where(starts_at: @start_time..@end_time)
+      .where.not(external_id: synced_external_ids)
+      .destroy_all
+
+    synced_events
   end
 
   private
@@ -50,14 +60,14 @@ class CalendarEventSyncService
   end
 
   def event_start_time(event_date_time)
-    return event_date_time.date_time if event_date_time.date_time.present?
+    return event_date_time.date_time.in_time_zone if event_date_time.date_time.present?
     return event_date_time.date.in_time_zone if event_date_time.date.present?
 
     nil
   end
 
   def event_end_time(event_date_time)
-    return event_date_time.date_time if event_date_time.date_time.present?
+    return event_date_time.date_time.in_time_zone if event_date_time.date_time.present?
     return event_date_time.date.in_time_zone - 1.second if event_date_time.date.present?
 
     nil
