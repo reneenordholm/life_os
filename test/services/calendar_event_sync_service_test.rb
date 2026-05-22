@@ -133,4 +133,57 @@ class CalendarEventSyncServiceTest < ActiveSupport::TestCase
     assert_equal (event_date + 1.day).in_time_zone - 1.second, calendar_event.ends_at
     assert_equal "Lake Union", calendar_event.location
   end
+
+  test "removes stale synced events within sync window" do
+    start_time = Time.zone.local(2026, 5, 20, 0, 0)
+    end_time = Time.zone.local(2026, 5, 20, 23, 59, 59)
+
+    stale_event = CalendarEvent.create!(
+      source: "google",
+      external_id: "stale-google-event",
+      title: "Deleted Google Event",
+      starts_at: Time.zone.local(2026, 5, 20, 9, 0),
+      ends_at: Time.zone.local(2026, 5, 20, 10, 0)
+    )
+
+    out_of_window_event = CalendarEvent.create!(
+      source: "google",
+      external_id: "out-of-window-google-event",
+      title: "Tomorrow Google Event",
+      starts_at: Time.zone.local(2026, 5, 21, 9, 0),
+      ends_at: Time.zone.local(2026, 5, 21, 10, 0)
+    )
+
+    manual_event = CalendarEvent.create!(
+      source: "manual",
+      external_id: "manual-event",
+      title: "Manual Event",
+      starts_at: Time.zone.local(2026, 5, 20, 12, 0),
+      ends_at: Time.zone.local(2026, 5, 20, 13, 0)
+    )
+
+    google_event = GoogleEvent.new(
+      id: "current-google-event",
+      summary: "Current Google Event",
+      start: EventDateTime.new(date_time: Time.zone.local(2026, 5, 20, 14, 0)),
+      end: EventDateTime.new(date_time: Time.zone.local(2026, 5, 20, 15, 0)),
+      location: "Office"
+    )
+
+    fake_client = Object.new
+    fake_client.define_singleton_method(:events_for_range) do |start_time:, end_time:|
+      [ google_event ]
+    end
+
+    CalendarEventSyncService.call(
+      start_time: start_time,
+      end_time: end_time,
+      client: fake_client
+    )
+
+    assert_nil CalendarEvent.find_by(id: stale_event.id)
+    assert CalendarEvent.exists?(id: out_of_window_event.id)
+    assert CalendarEvent.exists?(id: manual_event.id)
+    assert CalendarEvent.exists?(source: "google", external_id: "current-google-event")
+  end
 end
