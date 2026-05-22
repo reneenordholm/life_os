@@ -27,6 +27,7 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
 
     response = Object.new
     response.define_singleton_method(:items) { [ event ] }
+    response.define_singleton_method(:next_page_token) { nil }
 
     captured_calendar_id = nil
     captured_options = nil
@@ -56,5 +57,49 @@ class GoogleCalendarClientTest < ActiveSupport::TestCase
     assert_equal "startTime", captured_options[:order_by]
     assert_equal start_time.iso8601, captured_options[:time_min]
     assert_equal end_time.iso8601, captured_options[:time_max]
+  end
+
+  test "fetches events across paginated responses" do
+    start_time = Time.zone.local(2026, 5, 18, 9, 0)
+    end_time = Time.zone.local(2026, 5, 18, 17, 0)
+
+    first_event = Object.new
+    second_event = Object.new
+
+    first_response = Object.new
+    first_response.define_singleton_method(:items) { [ first_event ] }
+    first_response.define_singleton_method(:next_page_token) { "next-page-token" }
+
+    second_response = Object.new
+    second_response.define_singleton_method(:items) { [ second_event ] }
+    second_response.define_singleton_method(:next_page_token) { nil }
+
+    captured_page_tokens = []
+
+    fake_service = Object.new
+    fake_service.define_singleton_method(:authorization) { nil }
+    fake_service.define_singleton_method(:authorization=) { |_authorization| }
+
+    fake_service.define_singleton_method(:list_events) do |_calendar_id, **options|
+      captured_page_tokens << options[:page_token]
+
+      if options[:page_token].nil?
+        first_response
+      else
+        second_response
+      end
+    end
+
+    client = GoogleCalendarClient.new(
+      service: fake_service,
+      authorization: "fake-authorization"
+    )
+
+    assert_equal [ first_event, second_event ], client.events_for_range(
+      start_time: start_time,
+      end_time: end_time
+    )
+
+    assert_equal [ nil, "next-page-token" ], captured_page_tokens
   end
 end

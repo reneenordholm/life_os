@@ -19,13 +19,26 @@ class GoogleCalendarClient
   def events_for_range(start_time:, end_time:)
     @service.authorization ||= @authorization || authorization
 
-    @service.list_events(
-      @calendar_id,
-      single_events: true,
-      order_by: "startTime",
-      time_min: start_time.iso8601,
-      time_max: end_time.iso8601
-    ).items
+    events = []
+    page_token = nil
+
+    loop do
+      response = @service.list_events(
+        @calendar_id,
+        single_events: true,
+        order_by: "startTime",
+        time_min: start_time.iso8601,
+        time_max: end_time.iso8601,
+        page_token: page_token
+      )
+
+      events.concat(response.items || [])
+
+      page_token = response.next_page_token
+      break if page_token.blank?
+    end
+
+    events
   end
 
   private
