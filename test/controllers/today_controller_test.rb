@@ -139,16 +139,26 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "syncs calendar and redirects to dashboard" do
-    original_call_method = CalendarEventSyncService.method(:call)
+    frozen_time = Time.zone.local(2024, 1, 15, 9, 30)
 
-    CalendarEventSyncService.define_singleton_method(:call) do |start_time:, end_time:|
-      true
+    travel_to(frozen_time) do
+      original_call_method = CalendarEventSyncService.method(:call)
+      called_with = nil
+
+      begin
+        CalendarEventSyncService.define_singleton_method(:call) do |start_time:, end_time:, **_kwargs|
+          called_with = { start_time: start_time, end_time: end_time }
+          true
+        end
+
+        post sync_calendar_path
+
+        assert_redirected_to root_path
+        assert_equal frozen_time.beginning_of_day, called_with[:start_time]
+        assert_equal frozen_time.end_of_day, called_with[:end_time]
+      ensure
+        CalendarEventSyncService.define_singleton_method(:call, original_call_method)
+      end
     end
-
-    post sync_calendar_path
-
-    assert_redirected_to root_path
-  ensure
-    CalendarEventSyncService.define_singleton_method(:call, original_call_method)
   end
 end
