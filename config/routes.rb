@@ -11,4 +11,5 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "today#index"
+  post "sync_calendar", to: "today#sync_calendar", as: :sync_calendar
 end

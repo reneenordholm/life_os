@@ -22,4 +22,13 @@ class TodayController < ApplicationController
       .where(starts_at: Date.current.all_day)
       .order(:starts_at)
   end
+
+  def sync_calendar
+    CalendarEventSyncService.call(
+      start_time: Time.current.beginning_of_day,
+      end_time: Time.current.end_of_day
+    )
+
+    redirect_to root_path, notice: "Calendar synced successfully."
+  end
 end

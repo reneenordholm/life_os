@@ -137,4 +137,18 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       assert_includes @response.body, "Good evening"
     end
   end
+
+  test "syncs calendar and redirects to dashboard" do
+    original_call_method = CalendarEventSyncService.method(:call)
+
+    CalendarEventSyncService.define_singleton_method(:call) do |start_time:, end_time:|
+      true
+    end
+
+    post sync_calendar_path
+
+    assert_redirected_to root_path
+  ensure
+    CalendarEventSyncService.define_singleton_method(:call, original_call_method)
+  end
 end
