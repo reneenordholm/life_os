@@ -24,11 +24,19 @@ class TodayController < ApplicationController
   end
 
   def sync_calendar
+    now = Time.current
+
     CalendarEventSyncService.call(
-      start_time: Time.current.beginning_of_day,
-      end_time: Time.current.end_of_day
+      start_time: now.beginning_of_day,
+      end_time: now.end_of_day
     )
 
     redirect_to root_path, notice: "Calendar synced successfully."
+  rescue ArgumentError => e
+    Rails.logger.warn(e.message)
+    redirect_to root_path, alert: e.message
+  rescue StandardError => e
+    Rails.logger.error(e.full_message)
+    redirect_to root_path, alert: "Calendar sync failed. Please try again."
   end
 end
