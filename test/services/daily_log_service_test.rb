@@ -41,7 +41,7 @@ class DailyLogServiceTest < ActiveSupport::TestCase
   end
 
   test "updates existing daily log by metadata date" do
-    date = Date.new(2026, 5, 30)
+    date = Date.new(2026, 5, 29)
 
     first_doc = DailyLogService.create_or_update_for_date(date, "Original log")
     updated_doc = DailyLogService.create_or_update_for_date(date, "Updated log")
