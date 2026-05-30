@@ -1,24 +1,34 @@
 class DailyLogService
   def self.create_or_update_for_date(date, content)
-    title = "📓 Daily Log — #{date}"
+    retries = 0
 
-    doc = Document.find_or_initialize_by(
-      doc_type: "daily_log",
-      title: title
-    )
+    begin
+      title = "📓 Daily Log — #{date}"
 
-    doc.assign_attributes(
-      content: content,
-      metadata: {
-        "date" => date.to_s,
-        "weekday" => date.strftime("%A"),
-        "category" => "daily"
-      }
-    )
+      doc = Document
+        .where(doc_type: "daily_log")
+        .where("metadata ->> 'date' = ?", date.to_s)
+        .first_or_initialize
 
-    doc.save!
+      doc.assign_attributes(
+        title: title,
+        doc_type: "daily_log",
+        content: content,
+        metadata: {
+          "date" => date.to_s,
+          "weekday" => date.strftime("%A"),
+          "category" => "daily"
+        }
+      )
 
-    doc
+      doc.save!
+      doc
+    rescue ActiveRecord::RecordNotUnique
+      retries += 1
+      retry if retries <= 1
+
+      raise
+    end
   end
 
   def self.create_today(content)

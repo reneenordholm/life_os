@@ -39,4 +39,20 @@ class DailyLogServiceTest < ActiveSupport::TestCase
         title: "📓 Daily Log — #{date}"
       ).count
   end
+
+  test "updates existing daily log by metadata date" do
+    date = Date.new(2026, 5, 30)
+
+    first_doc = DailyLogService.create_or_update_for_date(date, "Original log")
+    updated_doc = DailyLogService.create_or_update_for_date(date, "Updated log")
+
+    assert_equal first_doc.id, updated_doc.id
+    assert_equal "Updated log", updated_doc.content
+
+    assert_equal 1,
+      Document
+        .where(doc_type: "daily_log")
+        .where("metadata ->> 'date' = ?", date.to_s)
+        .count
+  end
 end
