@@ -13,6 +13,18 @@
     </p>
   </header>
 
+  <% if flash[:notice].present? %>
+    <div class="mb-6 rounded-lg px-4 py-3 text-sm" style="background-color: #ecfdf5; color: #166534;" role="status">
+      <%= flash[:notice] %>
+    </div>
+  <% end %>
+
+  <% if flash[:alert].present? %>
+    <div class="mb-6 rounded-lg px-4 py-3 text-sm" style="background-color: #fef2f2; color: #991b1b;" role="alert">
+      <%= flash[:alert] %>
+    </div>
+  <% end %>
+
   <section class="mb-8 grid gap-4 md:grid-cols-3">
     <div class="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
       <p class="text-sm font-medium text-gray-500">Calendar</p>
