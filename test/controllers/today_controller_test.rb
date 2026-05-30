@@ -148,7 +148,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       begin
         CalendarEventSyncService.define_singleton_method(:call) do |start_time:, end_time:, **_kwargs|
           called_with = { start_time: start_time, end_time: end_time }
-          true
+          []
         end
 
         post sync_calendar_path
