@@ -1,289 +1,121 @@
-# 🧠 Life OS
-
-> A personal AI memory layer built on Rails, pgvector, and OpenAI.  
-> Turns your life into queryable, structured, semantic memory.
-
----
-
-<div align="center">
-
-![Status](https://img.shields.io/badge/status-active-success)
-![Rails](https://img.shields.io/badge/Rails-8-red)
-![Postgres](https://img.shields.io/badge/PostgreSQL-pgvector-blue)
-![AI](https://img.shields.io/badge/AI-GPT--4o-purple)
-
-### 🧠 Personal AI Memory System  
-*RAG-based assistant for querying your life data in natural language*
-
-</div>
-
----
-
-# ✨ Overview
-
-Life OS is a **personal AI memory system** that allows you to store, retrieve, and reason over your life using natural language.
-
-It combines:
-
-> 📚 Structured personal data (logs, recipes, plans)<br>
-> 🧠 Vector embeddings for semantic retrieval<br>
-> 🤖 LLM reasoning over retrieved context<br>
-> ⚡ Rails-backed production architecture<br>
-
----
-
-# 🧭 Core Experience
-
-Instead of searching notes or calendars, you ask:
-
-- “What did I do today?”
-- “When does Mom arrive?”
-- “What are my favorite recipes?”
-- “What groceries do I usually buy?”
-
-And receive grounded, contextual answers from your own memory.
-
----
-
-# 🧱 System Architecture
-
-## High-Level Flow
-
-```mermaid
-flowchart TD
-    A[User Question] --> B[Embedding model]
-    B --> C[Vector Search]
-    C --> D[Top-K Document Chunks]
-    D --> E[Context Assembly]
-    E --> F[Response Generation]
-    F --> G[Final Answer]
-
-    subgraph Memory Layer
-        H[Documents]
-        I[Chunks]
-        J[(PostgreSQL + pgvector)]
-    end
-
-H --> I --> J --> C
-```
-
-#### User Question  
-→ Embed Query (OpenAI: text-embedding-3-small)<br>
-→ Vector Search (PostgreSQL + pgvector)<br>
-→ Retrieve Top-K Relevant Chunks<br>
-→ Assemble Context Window<br>
-→ Generate Response (GPT-4o)<br>
-→ Return Final Answer<br>
-
----
-
-## 📚 Document Layer
-
-| Type | Examples |
-|------|----------|
-| 📓 Daily Logs | Work, activities, meals |
-| 🍳 Recipes | Personal favorites |
-| 🛒 Grocery | Baseline list |
-| 📅 Itineraries | Travel plans |
-| 💻 Projects | Life OS progress |
-| 🩺 Medical | Health notes |
-
-Each document:
-
-```ruby
-title
-content
-doc_type
-metadata
-```
-
----
-
-## ✂️ Chunking Layer
-
-- Preserves context boundaries
-- Improves embedding accuracy
-- Enables semantic search
-
-Each chunk:
-```ruby
-content
-embedding
-document_id
-```
-
----
-
-## 🧠 Embedding Layer
-
-- Model: text-embedding-3-small
-- Stored in PostgreSQL via pgvector
-- Enables cosine similarity search
-
----
-
-## 🔍 Retrieval Layer (RAG)
-
-1. Embed query
-2. Vector search
-3. Retrieve top chunks
-4. Assemble context
-5. Send to GPT-4o
-
----
-
-## 🤖 Generation Layer
-
-GPT-4o is instructed to:
-
-- use only retrieved context
-- avoid hallucinations
-- stay grounded in memory
-
----
-
-## 🧭 Smart Routing Layer
-```ruby
-case question.downcase
-when /recipe/
-  # recipe filter
-when /grocery/
-  # grocery filter
-when /doctor/
-  # medical filter
-when /trip || vacation/
-  # itinerary filter
-end
-```
-
----
-
-## 📓 Daily Memory System
-
-Each daily log includes:
-
-- Work
-- Activities
-- Meals
-- Projects
-- Notes
-
-Creates a time-indexed memory stream.
-
----
-
-## 🧪 Example Queries
-
-#### “What did I do today?”
-- Work summary  
-- Activities  
-- Meals  
-- Projects  
-
----
-
-#### “What are my favorite recipes?”
-- Blueberry Collagen Smoothie  
-- Peanut Butter Marshmallow Kix Bars  
-
----
-
-#### “What groceries do I usually buy?”
-- Grocery baseline list  
-
----
-
-#### “When does Mom arrive?”
-- Itinerary-based response  
-
----
-
-## 🧠 Design Philosophy
-
-- Memory-first architecture  
-- Semantic over structural search  
-- Incremental intelligence  
-- Real-world utility over demos  
-
----
-
-## 🚧 Known Limitations
-
-- Keyword routing is simplistic  
-- No entity graph yet  
-- No summarization layer  
-- No temporal reasoning  
-- No proactive behavior  
-
----
-
-## 🧭 Roadmap
-
-### Phase 1
-- LLM intent classification  
-- Hybrid ranking  
-- Entity extraction  
-
----
-
-### Phase 2
-- Weekly summaries  
-- Pattern detection  
-- Change tracking  
-
----
-
-### Phase 3
-- Planning assistant  
-- Proactive suggestions  
-
----
-
-### Phase 4
-- Memory graph  
-- Relationship modeling  
-- Timeline reconstruction  
-
----
-
-## ⚙️ Setup
-
+# Life OS
+
+> A personal AI memory system built with Rails, PostgreSQL/pgvector, Hotwire, and OpenAI.
+> Capture personal knowledge, see today at a glance, and ask natural-language questions about your life.
+
+## Overview
+Life OS is a personal memory layer for storing and retrieving the kinds of information that are usually scattered across notes, plans, logs, and calendars.
+
+Instead of digging through documents, you can build a system that helps answer questions like:
+- What did I do today?
+- When does Mom arrive?
+- What are my favorite recipes?
+- What groceries do I usually buy?
+
+Right now, the app combines:
+- a daily dashboard for viewing today's context
+- personal documents such as daily logs, recipes, itineraries, groceries, project notes, and medical notes
+- AI-generated summaries and grounded answers
+- semantic search powered by PostgreSQL + pgvector
+- sync from a single Google Calendar instance
+
+The goal is to make personal information easier to revisit, search, and use in everyday life.
+
+## Current Features
+- Daily dashboard at `/`
+- UI built with Rails, Hotwire, and Tailwind CSS
+- Daily log tracking with AI-generated summaries
+- Natural-language question answering over stored memory
+- Semantic document ingestion with chunking and embeddings
+- Google Calendar sync for one configured calendar
+- Calendar event display for today's schedule
+
+## What the App Looks Like Today
+The current experience centers around the homepage dashboard.
+
+From there you can:
+- see a quick snapshot of your day
+- view today's calendar events
+- see whether a daily log exists for today
+- see whether an AI summary is available
+- trigger a calendar sync from the UI
+
+This means the project is no longer just a backend memory experiment — it now has a usable interface for day-to-day interaction.
+
+## How It Works
+At a high level, Life OS works like this:
+1. personal documents are stored in the app
+2. document content is split into smaller chunks
+3. embeddings are generated for semantic search
+4. relevant information is retrieved when you ask a question
+5. the AI responds using the retrieved context
+
+Daily logs can also be summarized and cached, and Google Calendar events can be synced into the app for use on the dashboard.
+
+## Types of Information It Stores
+Life OS currently supports content such as:
+- daily logs
+- recipes
+- groceries
+- itineraries
+- project notes
+- medical notes
+- calendar events synced from Google Calendar
+
+## Current Limitations
+- Calendar sync is currently limited to one configured Google Calendar instance
+- The product is still centered on the dashboard and backend memory workflows
+- Retrieval and routing are still evolving
+- Broader memory intelligence features are still in progress
+
+## Local Setup
+### Prerequisites
+- Ruby / Rails environment
+- PostgreSQL with `pgvector` enabled
+- OpenAI API key
+- Google Calendar credentials if you want calendar sync
+
+### Install and run
 ```bash
 bundle install
-rails db:create db:migrate
-rails server
+bin/rails db:create db:migrate
+bin/rails server
 ```
 
----
+Open the app at `http://localhost:3000`.
 
-## ⚙️ Environment
-
+## Environment Variables
+Minimum required:
 ```bash
 OPENAI_API_KEY=your_key
+LLM_MODEL=gpt-4o-mini
 ```
 
-## 📊 Status
+For Google Calendar sync:
+```bash
+GOOGLE_CLIENT_ID=your_client_id
+GOOGLE_CLIENT_SECRET=your_client_secret
+GOOGLE_REFRESH_TOKEN=your_refresh_token
+```
 
-- RAG pipeline: ✅  
-- Data ingestion: ✅  
-- Multi-domain memory: ✅  
-- Semantic retrieval: ✅  
-- Daily usage: ⚡ active  
+To generate a refresh token locally:
+```bash
+ruby scripts/google_calendar_oauth.rb
+```
 
----
+## Status
+Life OS currently includes:
+- a working Rails application
+- a dashboard UI
+- semantic document ingestion and retrieval
+- AI-generated daily log summaries
+- Google Calendar sync for one configured calendar
 
-## 🧠 Vision
+## Vision
+Life OS is meant to become a durable personal memory layer.
 
-A personal AI memory layer that lets you query your life like a database.
+Not just note storage.
+Not just search.
+Not just chat.
 
-Not a chatbot.  
-Not a notes app.  
-A living memory system.
-
----
-
-## 🚀 Current State
-
-- MVP → working RAG system  
-- Next → memory intelligence layer  
-- Future → full personal AI agent  
+A system that helps you understand what happened, what matters, and what is coming next.
