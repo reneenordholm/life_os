@@ -16,7 +16,7 @@ class DailyLogServiceTest < ActiveSupport::TestCase
   end
 
   test "updates existing daily log for date" do
-    date = Date.new(2026, 5, 30)
+    date = Date.new(2026, 5, 31)
 
     first_doc =
       DailyLogService.create_or_update_for_date(
