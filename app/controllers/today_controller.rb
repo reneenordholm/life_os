@@ -33,8 +33,9 @@ class TodayController < ApplicationController
 
     redirect_to root_path, notice: "Calendar synced successfully."
   rescue ArgumentError => e
-    Rails.logger.warn(e.message)
-    redirect_to root_path, alert: e.message
+    Rails.logger.warn(e.full_message)
+    message = Rails.env.development? ? e.message : "Calendar sync is not configured."
+    redirect_to root_path, alert: message
   rescue StandardError => e
     Rails.logger.error(e.full_message)
     redirect_to root_path, alert: "Calendar sync failed. Please try again."
