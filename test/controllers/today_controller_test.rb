@@ -154,6 +154,10 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
         post sync_calendar_path
 
         assert_redirected_to root_path
+        follow_redirect!
+        assert_response :success
+        assert_includes @response.body, "Calendar synced successfully."
+
         assert_equal frozen_time.beginning_of_day, called_with[:start_time]
         assert_equal frozen_time.end_of_day, called_with[:end_time]
       ensure
