@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_18_142530) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_205857) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -56,6 +56,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_18_142530) do
     t.text "summary"
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index "((metadata ->> 'date'::text))", name: "index_documents_on_daily_log_date", unique: true, where: "((doc_type)::text = 'daily_log'::text)"
     t.index ["doc_type"], name: "index_documents_on_doc_type"
   end
 
