@@ -137,4 +137,80 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       assert_includes @response.body, "Good evening"
     end
   end
+
+  test "syncs calendar and redirects to dashboard" do
+    frozen_time = Time.zone.local(2024, 1, 15, 9, 30)
+
+    travel_to(frozen_time) do
+      original_call_method = CalendarEventSyncService.method(:call)
+      called_with = nil
+
+      begin
+        CalendarEventSyncService.define_singleton_method(:call) do |start_time:, end_time:, **_kwargs|
+          called_with = { start_time: start_time, end_time: end_time }
+          []
+        end
+
+        post sync_calendar_path
+
+        assert_redirected_to root_path
+        follow_redirect!
+        assert_response :success
+        assert_includes @response.body, "Calendar synced successfully."
+
+        assert_equal frozen_time.beginning_of_day, called_with[:start_time]
+        assert_equal frozen_time.end_of_day, called_with[:end_time]
+      ensure
+        CalendarEventSyncService.define_singleton_method(:call, original_call_method)
+      end
+    end
+  end
+
+  test "shows an alert when calendar sync is not configured" do
+    original_call_method = CalendarEventSyncService.method(:call)
+
+    begin
+      CalendarEventSyncService.define_singleton_method(:call) do |**_kwargs|
+        raise ArgumentError, "Google Calendar credentials are not configured."
+      end
+
+      post sync_calendar_path
+
+      assert_redirected_to root_path
+
+      follow_redirect!
+      assert_response :success
+
+      expected_message =
+        if Rails.env.development?
+          "Google Calendar credentials are not configured."
+        else
+          "Calendar sync is not configured."
+        end
+
+      assert_includes @response.body, expected_message
+    ensure
+      CalendarEventSyncService.define_singleton_method(:call, original_call_method)
+    end
+  end
+
+  test "shows a generic alert when calendar sync fails unexpectedly" do
+    original_call_method = CalendarEventSyncService.method(:call)
+
+    begin
+      CalendarEventSyncService.define_singleton_method(:call) do |**_kwargs|
+        raise StandardError, "Unexpected sync failure"
+      end
+
+      post sync_calendar_path
+
+      assert_redirected_to root_path
+
+      follow_redirect!
+      assert_response :success
+      assert_includes @response.body, "Calendar sync failed. Please try again."
+    ensure
+      CalendarEventSyncService.define_singleton_method(:call, original_call_method)
+    end
+  end
 end

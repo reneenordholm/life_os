@@ -22,4 +22,22 @@ class TodayController < ApplicationController
       .where(starts_at: Date.current.all_day)
       .order(:starts_at)
   end
+
+  def sync_calendar
+    now = Time.current
+
+    CalendarEventSyncService.call(
+      start_time: now.beginning_of_day,
+      end_time: now.end_of_day
+    )
+
+    redirect_to root_path, notice: "Calendar synced successfully."
+  rescue ArgumentError => e
+    Rails.logger.warn(e.full_message)
+    message = Rails.env.development? ? e.message : "Calendar sync is not configured."
+    redirect_to root_path, alert: message
+  rescue StandardError => e
+    Rails.logger.error(e.full_message)
+    redirect_to root_path, alert: "Calendar sync failed. Please try again."
+  end
 end
