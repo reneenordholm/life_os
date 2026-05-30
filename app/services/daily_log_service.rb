@@ -14,11 +14,11 @@ class DailyLogService
         title: title,
         doc_type: "daily_log",
         content: content,
-        metadata: {
+        metadata: (doc.metadata || {}).merge(
           "date" => date.to_s,
           "weekday" => date.strftime("%A"),
           "category" => "daily"
-        }
+        )
       )
 
       doc.save!
