@@ -1,10 +1,13 @@
 class DailyLogService
-  def self.create_for_date(date, content)
+  def self.create_or_update_for_date(date, content)
     title = "📓 Daily Log — #{date}"
 
-    doc = Document.create!(
-      title: title,
+    doc = Document.find_or_initialize_by(
       doc_type: "daily_log",
+      title: title
+    )
+
+    doc.assign_attributes(
       content: content,
       metadata: {
         "date" => date.to_s,
@@ -13,10 +16,12 @@ class DailyLogService
       }
     )
 
+    doc.save!
+
     doc
   end
 
   def self.create_today(content)
-    create_for_date(Date.today, content)
+    create_or_update_for_date(Date.current, content)
   end
 end
