@@ -55,7 +55,7 @@ class TodayController < ApplicationController
 
     DailyLogService.create_or_update_for_date(date, content)
 
-    redirect_to root_path, notice: "Daily log saved successfully."
+    redirect_to root_path, notice: "Daily log saved for #{date.strftime('%B %-d, %Y')}."
   rescue Date::Error
     redirect_to root_path, alert: "Please choose a valid date."
   rescue StandardError => e

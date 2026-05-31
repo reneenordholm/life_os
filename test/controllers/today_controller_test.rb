@@ -232,7 +232,7 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
 
     follow_redirect!
     assert_response :success
-    assert_includes @response.body, "Daily log saved successfully."
+    assert_includes @response.body, "Daily log saved for May 30, 2026."
   end
 
   test "updates an existing daily log and redirects to dashboard" do
