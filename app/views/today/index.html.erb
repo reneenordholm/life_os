@@ -117,7 +117,9 @@
       </div>
 
       <% if @daily_log.present? %>
-        <p class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.content %></p>
+        <div class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+          <%= @daily_log.content %>
+        </div>
       <% else %>
         <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
           No daily log yet.
