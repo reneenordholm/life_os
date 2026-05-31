@@ -165,7 +165,7 @@
           <div>
             <%= label_tag :date, "Log date", class: "mb-1 block text-sm font-medium text-gray-700" %>
             <%= date_field_tag :date,
-                              Date.current.iso8601,
+                              @capture_date&.iso8601,
                               class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" %>
           </div>
 
