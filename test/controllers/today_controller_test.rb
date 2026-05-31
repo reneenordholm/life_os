@@ -213,4 +213,82 @@ class TodayControllerTest < ActionDispatch::IntegrationTest
       CalendarEventSyncService.define_singleton_method(:call, original_call_method)
     end
   end
+
+  test "saves a new daily log and redirects to dashboard" do
+    post save_daily_log_path, params: {
+      date: "2026-05-30",
+      content: "Worked on Life OS today."
+    }
+
+    assert_redirected_to root_path
+
+    daily_log = Document.find_by!(
+      doc_type: "daily_log",
+      title: "📓 Daily Log — 2026-05-30"
+    )
+
+    assert_equal "Worked on Life OS today.", daily_log.content
+    assert_equal "2026-05-30", daily_log.metadata["date"]
+
+    follow_redirect!
+    assert_response :success
+    assert_includes @response.body, "Daily log saved successfully."
+  end
+
+  test "updates an existing daily log and redirects to dashboard" do
+    date = Date.new(2026, 5, 30)
+
+    existing_log = DailyLogService.create_or_update_for_date(
+      date,
+      "Original content"
+    )
+
+    post save_daily_log_path, params: {
+      date: date.iso8601,
+      content: "Updated content"
+    }
+
+    assert_redirected_to root_path
+
+    existing_log.reload
+    assert_equal "Updated content", existing_log.content
+
+    assert_equal 1,
+      Document
+        .where(doc_type: "daily_log")
+        .where("metadata ->> 'date' = ?", date.iso8601)
+        .count
+  end
+
+  test "rejects blank daily log content" do
+    post save_daily_log_path, params: {
+      date: "2026-05-30",
+      content: "   "
+    }
+
+    assert_redirected_to root_path
+
+    assert_equal 0,
+      Document
+        .where(doc_type: "daily_log")
+        .where("metadata ->> 'date' = ?", "2026-05-30")
+        .count
+
+    follow_redirect!
+    assert_response :success
+    assert_includes @response.body, "Daily log content cannot be blank."
+  end
+
+  test "rejects invalid daily log date" do
+    post save_daily_log_path, params: {
+      date: "not-a-date",
+      content: "Some content"
+    }
+
+    assert_redirected_to root_path
+
+    follow_redirect!
+    assert_response :success
+    assert_includes @response.body, "Please choose a valid date."
+  end
 end
