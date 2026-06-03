@@ -46,8 +46,7 @@ class TodayController < ApplicationController
 
   def save_daily_log
     date = Date.iso8601(params[:date].to_s)
-    content = params[:content].to_s.strip
-
+    content = params[:content].to_s
     if content.blank?
       redirect_to root_path, alert: "Daily log content cannot be blank."
       return
