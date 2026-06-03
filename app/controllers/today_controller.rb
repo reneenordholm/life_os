@@ -18,6 +18,9 @@ class TodayController < ApplicationController
       .order(id: :desc)
       .first
 
+    @capture_date = Date.current
+    @capture_content = @daily_log&.content
+
     @calendar_events = CalendarEvent
       .where(starts_at: Date.current.all_day)
       .order(:starts_at)
@@ -39,5 +42,23 @@ class TodayController < ApplicationController
   rescue StandardError => e
     Rails.logger.error(e.full_message)
     redirect_to root_path, alert: "Calendar sync failed. Please try again."
+  end
+
+  def save_daily_log
+    date = Date.iso8601(params[:date].to_s)
+    content = params[:content].to_s
+    if content.blank?
+      redirect_to root_path, alert: "Daily log content cannot be blank."
+      return
+    end
+
+    DailyLogService.create_or_update_for_date(date, content)
+
+    redirect_to root_path, notice: "Daily log saved for #{date.strftime('%B %-d, %Y')}."
+  rescue Date::Error
+    redirect_to root_path, alert: "Please choose a valid date."
+  rescue StandardError => e
+    Rails.logger.error(e.full_message)
+    redirect_to root_path, alert: "Daily log could not be saved. Please try again."
   end
 end

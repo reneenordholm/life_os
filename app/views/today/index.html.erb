@@ -117,33 +117,71 @@
       </div>
 
       <% if @daily_log.present? %>
-        <pre class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.content %></pre>
+        <div class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+          <%= @daily_log.content %>
+        </div>
       <% else %>
         <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
           No daily log yet.
         </p>
       <% end %>
     </section>
-  </div>
 
-  <section class="mt-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-    <div class="mb-4 flex items-center justify-between">
-      <h2 class="text-xl font-semibold text-gray-900">Summary</h2>
-      <span class="rounded-full bg-purple-50 px-3 py-1 text-sm text-purple-600">AI-generated</span>
-    </div>
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-900">Summary</h2>
+        <span class="rounded-full bg-purple-50 px-3 py-1 text-sm text-purple-600">AI-generated</span>
+      </div>
 
-    <% if @daily_log.present? %>
-      <% if @daily_log.summary.present? %>
-        <pre class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.summary %></pre>
+      <% if @daily_log.present? %>
+        <% if @daily_log.summary.present? %>
+          <pre class="whitespace-pre-wrap rounded-xl bg-gray-50 p-4 text-sm text-gray-700"><%= @daily_log.summary %></pre>
+        <% else %>
+          <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+            No summary available.
+          </p>
+        <% end %>
       <% else %>
         <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-          No summary available.
+          No summary available because there is no daily log yet.
         </p>
       <% end %>
-    <% else %>
-      <p class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
-        No summary available because there is no daily log yet.
-      </p>
-    <% end %>
-  </section>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div class="mb-4 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-900">Capture</h2>
+
+        <span class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-500">
+          <%= @daily_log.present? ? "Update" : "New" %>
+        </span>
+      </div>
+
+      <div class="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-4">
+        <%= form_with url: save_daily_log_path,
+                      method: :post,
+                      class: "space-y-4" do %>
+
+          <div>
+            <%= label_tag :date, "Log date", class: "mb-1 block text-sm font-medium text-gray-700" %>
+            <%= date_field_tag :date,
+                              @capture_date&.iso8601,
+                              class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" %>
+          </div>
+
+          <div>
+            <%= label_tag :content, "Daily log", class: "mb-1 block text-sm font-medium text-gray-700" %>
+            <%= text_area_tag :content,
+                              @capture_content,
+                              rows: 5,
+                              placeholder: "Capture your day. Notes, thoughts, events, ideas...",
+                              class: "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" %>
+          </div>
+
+          <%= submit_tag "Save Daily Log",
+                        class: "rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700" %>
+        <% end %>
+      </div>
+    </section>
+  </div>
 </div>
