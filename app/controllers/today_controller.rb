@@ -18,8 +18,20 @@ class TodayController < ApplicationController
       .order(id: :desc)
       .first
 
-    @capture_date = Date.current
-    @capture_content = @daily_log&.content
+    @capture_date =
+      begin
+        params[:date].present? ? Date.iso8601(params[:date]) : Date.current
+      rescue Date::Error
+        Date.current
+      end
+
+    @capture_log = Document
+      .where(doc_type: "daily_log")
+      .where("metadata ->> 'date' = ?", @capture_date.iso8601)
+      .order(id: :desc)
+      .first
+
+    @capture_content = @capture_log&.content
 
     @calendar_events = CalendarEvent
       .where(starts_at: Date.current.all_day)
